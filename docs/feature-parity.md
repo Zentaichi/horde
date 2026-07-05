@@ -1,0 +1,34 @@
+# Feature Parity Reference (Herd / DBngin)
+
+This document lists the full feature set of Laravel Herd and DBngin, used as inspiration for Horde. Items marked ✅ are in MVP; ☑️ are planned for post‑MVP.
+
+## PHP Management
+- ✅ Download any PHP version
+- ✅ List installed versions
+- ✅ Switch global PHP version
+- ☑️ Per‑project version via `.php-version`
+- ☑️ Enable/disable extensions with UI
+- ☑️ Edit `php.ini` directly in the app
+- ☑️ Run a local development server with a single click
+- ☑️ Built‑in HTTPS via mkcert
+- ☑️ Auto‑start a chosen PHP version at system boot
+
+## Database Management
+- ✅ Download & install portable MySQL
+- ✅ Start / Stop / Restart database service
+- ✅ Create / Delete databases
+- ☑️ Support for MariaDB, PostgreSQL
+- ☑️ Import / Export SQL dumps
+- ☑️ Multiple simultaneous instances (different versions/ports)
+- ☑️ Real‑time query log viewer
+
+## Site & Domain Management
+- ☑️ Map local domains to project folders (hosts file management)
+- ☑️ Automatic PHP built‑in server or Caddy proxy
+- ☑️ Quick project creation from framework templates
+
+## Developer Experience
+- ☑️ System tray icon with service status indicators
+- ☑️ Automatic cleanup of unused binary versions
+- ☑️ JSON configuration file for settings sync
+- ☑️ Notifications on service failures

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist-electron",
+    "rootDir": "electron",
+    "strict": true,
+    "sourceMap": true
+  },
+  "include": ["electron/**/*.ts"]
+}

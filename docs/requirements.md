@@ -1,0 +1,42 @@
+# Requirements – Horde MVP
+
+## Target Platform
+- Windows 10/11 (64‑bit)
+- Runs without administrator privileges (except optional PATH modifications)
+
+## Functional Requirements
+
+### FR1 – PHP Version Management
+- FR1.1: User can download any PHP version from the official Windows PHP mirror.
+- FR1.2: Downloaded versions are extracted to `%APPDATA%/Horde/php/<version>`.
+- FR1.3: System displays a list of all installed PHP versions.
+- FR1.4: User can switch the global PHP version by updating the user’s `PATH` environment variable.
+- FR1.5: UI shows the currently active global PHP version.
+
+### FR2 – MySQL Portable Server
+- FR2.1: User can download a portable MariaDB/MySQL zip.
+- FR2.2: App initialises a data directory (`mysqld --initialize`).
+- FR2.3: User can start, stop, and restart the MySQL process.
+- FR2.4: Service status (running/stopped) is displayed in real time.
+- FR2.5: User can create and delete databases via the UI.
+
+### FR3 – Settings & Persistence
+- FR3.1: All user settings (download paths, port numbers, active versions) are stored in a local SQLite database.
+- FR3.2: Settings persist across app restarts.
+
+### FR4 – User Interface
+- FR4.1: A dashboard shows the current status of PHP and MySQL.
+- FR4.2: Separate pages for PHP and MySQL management.
+- FR4.3: Light/dark theme toggle.
+
+## Non‑Functional Requirements
+- **Performance:** Downloads must be async with progress indication; UI remains responsive.
+- **Reliability:** All critical operations (download, extraction, process start) must handle errors gracefully and log failures.
+- **Security:** Renderer process has no direct Node.js access; all system interactions go through typed IPC.
+- **Testability:** Core services are unit‑testable in isolation.
+
+## Out of Scope (MVP)
+- PostgreSQL, MariaDB, or other database engines.
+- Built‑in HTTPS, auto‑start, system tray.
+- Per‑project PHP version files.
+- Site/domain mapping and reverse proxying.

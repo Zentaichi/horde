@@ -1,0 +1,15 @@
+appId: com.zentaichi.horde
+productName: Horde
+directories:
+  buildResources: resources
+  output: release
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+win:
+  target: nsis
+  icon: resources/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
