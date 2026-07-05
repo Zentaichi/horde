@@ -1,6 +1,8 @@
 # Feature Parity Reference (Herd / DBngin)
 
-This document lists the full feature set of Laravel Herd and DBngin, used as inspiration for Horde. Items marked ✅ are in MVP; ☑️ are planned for post‑MVP.
+This document lists the full feature set of Laravel Herd and DBngin, used as inspiration for Horde. Items marked ✅ are **planned** for MVP; ☑️ are planned for post‑MVP.
+
+> **Note:** MVP features are currently under development. See the [roadmap](roadmap.md) for current progress.
 
 ## PHP Management
 - ✅ Download any PHP version

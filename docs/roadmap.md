@@ -2,7 +2,7 @@
 
 ## Phase 1 – Core MVP (Current)
 **Goal:** Demonstrable PHP + MySQL management with clean architecture.
-- [ ] Project scaffolding (Electron + Vue 3 + Tailwind + Feature Sliced Design)
+- [x] Project scaffolding (Electron + Vue 3 + Tailwind + Feature Sliced Design)
 - [ ] PHP version list & download from windows.php.net
 - [ ] Global PHP version switching via PATH
 - [ ] MySQL portable download & initialise
