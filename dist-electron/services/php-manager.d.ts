@@ -10,9 +10,14 @@ export interface PhpVersion {
 }
 export declare class PhpManager {
     private readonly basePath;
+    private releasesCache;
     constructor();
     /**
-     * Get available PHP versions – correctly parses the nested JSON.
+     * Fetch releases JSON if not already cached.
+     */
+    private fetchReleases;
+    /**
+     * Get available PHP versions – sorted newest first.
      */
     getAvailableVersions(): Promise<string[]>;
     /**
@@ -20,7 +25,12 @@ export declare class PhpManager {
      */
     getInstalledVersions(): PhpVersion[];
     /**
-     * Download a PHP zip and extract it.
+     * Find the download URL for a given version.
+     * Priority: nts x64, then any nts, then first available.
+     */
+    private getDownloadUrl;
+    /**
+     * Download and extract a specific PHP version.
      */
     downloadVersion(version: string, onProgress?: (info: ProgressInfo) => void): Promise<void>;
     /**

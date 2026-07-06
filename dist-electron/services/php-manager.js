@@ -13,32 +13,40 @@ const os_1 = require("os");
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 class PhpManager {
     basePath;
+    releasesCache = null;
     constructor() {
-        // Wait until the app is ready to call getPath (see main.ts change below)
         this.basePath = (0, path_1.join)(electron_1.app.getPath('userData'), 'php');
         if (!(0, fs_1.existsSync)(this.basePath)) {
             (0, fs_1.mkdirSync)(this.basePath, { recursive: true });
         }
     }
     /**
-     * Get available PHP versions – correctly parses the nested JSON.
+     * Fetch releases JSON if not already cached.
      */
-    async getAvailableVersions() {
+    async fetchReleases() {
+        if (this.releasesCache)
+            return this.releasesCache;
         const url = 'https://windows.php.net/downloads/releases/releases.json';
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Failed to fetch releases: ${response.statusText}`);
         }
         const data = await response.json();
+        this.releasesCache = data;
+        return data;
+    }
+    /**
+     * Get available PHP versions – sorted newest first.
+     */
+    async getAvailableVersions() {
+        const data = await this.fetchReleases();
         const versions = [];
         for (const key of Object.keys(data)) {
             const entry = data[key];
-            // Each top‑level entry has a "version" field, e.g. "8.3.32"
             if (entry && typeof entry === 'object' && typeof entry.version === 'string') {
                 versions.push(entry.version);
             }
         }
-        // Sort descending (newest first)
         return versions.sort((a, b) => (b > a ? 1 : -1));
     }
     /**
@@ -56,17 +64,54 @@ class PhpManager {
         }));
     }
     /**
-     * Download a PHP zip and extract it.
+     * Find the download URL for a given version.
+     * Priority: nts x64, then any nts, then first available.
+     */
+    async getDownloadUrl(version) {
+        const releases = await this.fetchReleases();
+        let targetRelease;
+        // Find the release object that has the exact "version" field
+        for (const key of Object.keys(releases)) {
+            if (releases[key]?.version === version) {
+                targetRelease = releases[key];
+                break;
+            }
+        }
+        if (!targetRelease) {
+            throw new Error(`Version ${version} not found in releases.`);
+        }
+        // Preferred: nts x64
+        const preferredArch = Object.keys(targetRelease).find((k) => k.startsWith('nts-') && k.endsWith('-x64'));
+        if (preferredArch && targetRelease[preferredArch]?.zip?.path) {
+            const zipPath = targetRelease[preferredArch].zip.path;
+            return `https://windows.php.net/downloads/releases/${zipPath}`;
+        }
+        // Fallback: any nts build
+        const anyNts = Object.keys(targetRelease).find((k) => k.startsWith('nts-') && targetRelease[k]?.zip?.path);
+        if (anyNts && targetRelease[anyNts]?.zip?.path) {
+            const zipPath = targetRelease[anyNts].zip.path;
+            return `https://windows.php.net/downloads/releases/${zipPath}`;
+        }
+        // Last resort: any build with a zip
+        const anyBuild = Object.keys(targetRelease).find((k) => targetRelease[k]?.zip?.path);
+        if (anyBuild && targetRelease[anyBuild]?.zip?.path) {
+            const zipPath = targetRelease[anyBuild].zip.path;
+            return `https://windows.php.net/downloads/releases/${zipPath}`;
+        }
+        throw new Error(`No downloadable zip found for PHP ${version}.`);
+    }
+    /**
+     * Download and extract a specific PHP version.
      */
     async downloadVersion(version, onProgress) {
-        const zipUrl = `https://windows.php.net/downloads/releases/php-${version}-nts-Win32-vs16-x64.zip`;
-        const tempDir = (0, path_1.join)((0, os_1.tmpdir)(), 'horde-php-downloads');
-        const zipPath = (0, path_1.join)(tempDir, `php-${version}.zip`);
         const extractPath = (0, path_1.join)(this.basePath, version);
-        await (0, fs_extra_1.ensureDir)(tempDir);
         if ((0, fs_1.existsSync)(extractPath)) {
             throw new Error(`PHP ${version} is already installed.`);
         }
+        const zipUrl = await this.getDownloadUrl(version);
+        const tempDir = (0, path_1.join)((0, os_1.tmpdir)(), 'horde-php-downloads');
+        const zipPath = (0, path_1.join)(tempDir, `php-${version}.zip`);
+        await (0, fs_extra_1.ensureDir)(tempDir);
         // Download with progress
         await this.downloadFile(zipUrl, zipPath, onProgress);
         // Extract via PowerShell
@@ -104,7 +149,6 @@ class PhpManager {
                 });
             });
         }
-        // Pipe directly to the file
         await (0, promises_1.pipeline)(nodeReadable, writer);
     }
 }
