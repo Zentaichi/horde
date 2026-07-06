@@ -35,6 +35,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
+const php_manager_1 = require("./services/php-manager");
+const php_handlers_1 = require("./ipc/php.handlers");
 let mainWindow = null;
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
@@ -50,17 +52,18 @@ function createWindow() {
     mainWindow.on('ready-to-show', () => {
         mainWindow?.show();
     });
-    // Determine if we're in development (running the Vite server)
     const isDev = !electron_1.app.isPackaged;
     if (isDev) {
         mainWindow.loadURL('http://localhost:5173');
     }
     else {
-        // In production, load the built renderer
         mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'renderer', 'index.html'));
     }
 }
 electron_1.app.whenReady().then(() => {
+    // Now it's safe to instantiate services and register IPC handlers
+    const phpManager = new php_manager_1.PhpManager();
+    (0, php_handlers_1.registerPhpHandlers)(phpManager);
     createWindow();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)

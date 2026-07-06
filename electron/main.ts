@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
+import { PhpManager } from './services/php-manager';
+import { registerPhpHandlers } from './ipc/php.handlers';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -19,17 +21,19 @@ function createWindow(): void {
     mainWindow?.show();
   });
 
-  // Determine if we're in development (running the Vite server)
   const isDev = !app.isPackaged;
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
-    // In production, load the built renderer
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'renderer', 'index.html'));
   }
 }
 
 app.whenReady().then(() => {
+  // Now it's safe to instantiate services and register IPC handlers
+  const phpManager = new PhpManager();
+  registerPhpHandlers(phpManager);
+
   createWindow();
 
   app.on('activate', () => {
