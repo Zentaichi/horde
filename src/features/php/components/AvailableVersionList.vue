@@ -9,7 +9,7 @@
           :disabled="isDownloading(version)"
           class="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
         >
-          {{ isDownloading(version) ? `${progress[version]?.percent ?? 0}%` : 'Download' }}
+          {{ isDownloading(version) ? `${downloadProgress[version]?.percent ?? 0}%` : 'Download' }}
         </button>
       </li>
     </ul>
