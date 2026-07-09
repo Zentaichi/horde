@@ -5,16 +5,18 @@
 **Goal:** Demonstrable PHP + MySQL on Windows with architecture that survives Phase 3 without rework.
 
 - [x] Project scaffolding (Electron + Vue 3 + Tailwind + Feature Sliced Design)
+- [x] shadcn-vue component library installed (Button, Card, Progress, Badge) + theme CSS infrastructure
 - [ ] `IPlatformAdapter` interface + `Win32PlatformAdapter` implementation
 - [ ] `IDatabaseEngine` + `IRuntimeManager` shared interfaces (contracts written before MySQL/PHP manager code grows)
-- [ ] PHP version list & download from windows.php.net (adapter-driven URL)
+- [x] PHP version list & download from windows.php.net (with progress bar: speed, ETA, byte counter)
+- [ ] PHP download URL routing via `IPlatformAdapter` (currently hardcoded in `PhpManager`)
 - [ ] Global PHP version switching via PATH (adapter-driven)
 - [ ] MySQL portable download & initialise (implements `IDatabaseEngine`)
 - [ ] MySQL start/stop process control
 - [ ] Engine-agnostic IPC contract: `databases.*` (not `mysql.*`), with `instanceId` support
 - [ ] Dashboard UI with real-time status
 - [ ] Settings persistence with SQLite
-- [ ] Light/dark theme toggle
+- [ ] Light/dark theme toggle (CSS variables ready; toggle composable deferred to Package C)
 - [ ] Unit and basic E2E tests
 - [ ] GitHub Actions CI building Windows installer
 
@@ -68,4 +70,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-09
+> Updated last: 2026-07-09 (Package A: PHP download UX, shadcn-vue, types consolidation)

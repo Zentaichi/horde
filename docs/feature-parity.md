@@ -14,7 +14,7 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 
 | Feature | Status |
 |---------|--------|
-| Download any PHP version | 🔄 |
+| Download any PHP version | ✔️ |
 | List installed versions | ✔️ |
 | Switch global PHP version | 🔄 |
 | Per-project version via `.php-version` | ☑️ |
