@@ -1,54 +1,55 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-
-export interface PhpVersion {
-  version: string;
-  path: string;
-  installed: boolean;
-}
-
-export interface DownloadProgress {
-  percent: number;
-  transferredBytes: number;
-  totalBytes: number;
-}
+import { ref } from 'vue';
+import type { PhpVersion, DownloadProgress } from '@/shared/types/php';
 
 export const usePhpStore = defineStore('php', () => {
   const availableVersions = ref<string[]>([]);
   const installedVersions = ref<PhpVersion[]>([]);
   const downloadProgress = ref<Record<string, DownloadProgress>>({});
   const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  function clearError() {
+    error.value = null;
+  }
 
   async function fetchAvailableVersions() {
     loading.value = true;
-    console.log('Fetching available versions...');
+    clearError();
     try {
       availableVersions.value = await window.electronAPI.php.getAvailableVersions();
-      console.log('Versions received:', availableVersions.value);
     } catch (e) {
-      console.error('Error fetching versions:', e);
+      error.value = e instanceof Error ? e.message : 'Failed to fetch available versions';
+      console.error(e);
     } finally {
       loading.value = false;
     }
   }
 
   async function fetchInstalledVersions() {
-    installedVersions.value = await window.electronAPI.php.getInstalledVersions();
+    clearError();
+    try {
+      installedVersions.value = await window.electronAPI.php.getInstalledVersions();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch installed versions';
+      console.error(e);
+    }
   }
 
   async function downloadVersion(version: string) {
-    // Set up progress listener
+    clearError();
     const unsubscribe = window.electronAPI.php.onDownloadProgress(version, (progress) => {
       downloadProgress.value[version] = progress;
     });
 
     try {
       await window.electronAPI.php.downloadVersion(version);
-      // Refresh installed list after download
       await fetchInstalledVersions();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to download PHP ${version}`;
+      console.error(e);
     } finally {
       unsubscribe();
-      // Clean up progress after a short delay
       setTimeout(() => {
         delete downloadProgress.value[version];
       }, 3000);
@@ -60,6 +61,8 @@ export const usePhpStore = defineStore('php', () => {
     installedVersions,
     downloadProgress,
     loading,
+    error,
+    clearError,
     fetchAvailableVersions,
     fetchInstalledVersions,
     downloadVersion,
