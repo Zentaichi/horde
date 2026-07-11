@@ -5,7 +5,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
-import { ensureDir } from 'fs-extra';
+import { ensureDir, remove } from 'fs-extra';
 import { tmpdir } from 'os';
 
 const execFileAsync = promisify(execFile);
@@ -165,6 +165,81 @@ export class PhpManager {
     } catch (err) {
       throw new Error(`Extraction failed: ${err}`);
     }
+  }
+
+  /**
+   * Return the currently active Horde-managed PHP version from PATH.
+   */
+  getActiveVersion(): string | null {
+    const entries = (process.env.PATH || '').split(';');
+    for (const entry of entries) {
+      if (entry.startsWith(this.basePath)) {
+        const relative = entry.slice(this.basePath.length).replace(/^[\\/]+/, '');
+        const version = relative.split(/[\\/]/)[0];
+        if (version) return version;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Set a PHP version as the global default by updating the user PATH.
+   */
+  async switchGlobal(version: string): Promise<void> {
+    const versionPath = join(this.basePath, version);
+    if (!existsSync(versionPath)) {
+      throw new Error(`PHP ${version} is not installed.`);
+    }
+
+    const currentPath = await this.readUserPath();
+    const entries = this.filterHordeEntries(currentPath.split(';').filter(Boolean));
+
+    entries.unshift(versionPath);
+
+    await this.writeUserPath(entries);
+  }
+
+  /**
+   * Uninstall a PHP version: clean PATH if active, then delete the directory.
+   */
+  async uninstallVersion(version: string): Promise<void> {
+    const versionPath = join(this.basePath, version);
+    if (!existsSync(versionPath)) {
+      throw new Error(`PHP ${version} is not installed.`);
+    }
+
+    const activeVersion = this.getActiveVersion();
+    if (activeVersion === version) {
+      const currentPath = await this.readUserPath();
+      const entries = this.filterHordeEntries(currentPath.split(';').filter(Boolean));
+      await this.writeUserPath(entries);
+    }
+
+    await remove(versionPath);
+  }
+
+  private async readUserPath(): Promise<string> {
+    try {
+      const { stdout } = await execFileAsync('reg', [
+        'query', 'HKCU\\Environment', '/v', 'PATH',
+      ]);
+      const match = stdout.match(/PATH\s+REG_\w+\s+(.+)/);
+      return match ? match[1].trim() : '';
+    } catch {
+      return '';
+    }
+  }
+
+  private filterHordeEntries(entries: string[]): string[] {
+    return entries.filter(
+      (entry) => !entry.includes('Horde\\php') && !entry.includes('Horde/php'),
+    );
+  }
+
+  private async writeUserPath(entries: string[]): Promise<void> {
+    const newPath = entries.join(';');
+    await execFileAsync('setx', ['PATH', newPath]);
+    process.env.PATH = newPath;
   }
 
   /**

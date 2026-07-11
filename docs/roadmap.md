@@ -10,7 +10,7 @@
 - [ ] `IDatabaseEngine` + `IRuntimeManager` shared interfaces (contracts written before MySQL/PHP manager code grows)
 - [x] PHP version list & download from windows.php.net (with progress bar: speed, ETA, byte counter)
 - [ ] PHP download URL routing via `IPlatformAdapter` (currently hardcoded in `PhpManager`)
-- [ ] Global PHP version switching via PATH (adapter-driven)
+- [x] Global PHP version switching via PATH (user PATH via setx; reads current PATH from registry, removes old Horde entries, adds new version)
 - [ ] MySQL portable download & initialise (implements `IDatabaseEngine`)
 - [ ] MySQL start/stop process control
 - [ ] Engine-agnostic IPC contract: `databases.*` (not `mysql.*`), with `instanceId` support
@@ -70,4 +70,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-09 (Package A: PHP download UX, shadcn-vue, types consolidation)
+> Updated last: 2026-07-09 (Uninstall: PHP version removal + PATH cleanup. Reveal: open install dir in Explorer via shell.openPath)

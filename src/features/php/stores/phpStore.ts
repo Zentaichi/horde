@@ -6,7 +6,10 @@ export const usePhpStore = defineStore('php', () => {
   const availableVersions = ref<string[]>([]);
   const installedVersions = ref<PhpVersion[]>([]);
   const downloadProgress = ref<Record<string, DownloadProgress>>({});
+  const activeVersion = ref<string | null>(null);
   const loading = ref(false);
+  const switching = ref(false);
+  const uninstalling = ref(false);
   const error = ref<string | null>(null);
 
   function clearError() {
@@ -56,15 +59,63 @@ export const usePhpStore = defineStore('php', () => {
     }
   }
 
+  async function fetchActiveVersion() {
+    try {
+      activeVersion.value = await window.electronAPI.php.getActiveVersion();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function switchGlobalVersion(version: string) {
+    switching.value = true;
+    clearError();
+    try {
+      await window.electronAPI.php.switchGlobal(version);
+      await fetchActiveVersion();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to switch to PHP ${version}`;
+      console.error(e);
+    } finally {
+      switching.value = false;
+    }
+  }
+
+  async function uninstallVersion(version: string) {
+    uninstalling.value = true;
+    clearError();
+    try {
+      await window.electronAPI.php.uninstallVersion(version);
+      await fetchInstalledVersions();
+      await fetchActiveVersion();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to uninstall PHP ${version}`;
+      console.error(e);
+    } finally {
+      uninstalling.value = false;
+    }
+  }
+
+  function openVersionDir(path: string) {
+    window.electronAPI.openDirectory(path);
+  }
+
   return {
     availableVersions,
     installedVersions,
     downloadProgress,
+    activeVersion,
     loading,
+    switching,
+    uninstalling,
     error,
     clearError,
     fetchAvailableVersions,
     fetchInstalledVersions,
+    fetchActiveVersion,
     downloadVersion,
+    switchGlobalVersion,
+    uninstallVersion,
+    openVersionDir,
   };
 });

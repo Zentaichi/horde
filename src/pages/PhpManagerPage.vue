@@ -71,11 +71,13 @@ const filteredAvailable = computed(() => {
 onMounted(async () => {
   await store.fetchAvailableVersions();
   await store.fetchInstalledVersions();
+  await store.fetchActiveVersion();
 });
 
 async function refresh() {
   await store.fetchAvailableVersions();
   await store.fetchInstalledVersions();
+  await store.fetchActiveVersion();
 }
 
 async function onDownload(version: string) {

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { PhpManager } from '../services/php-manager';
 
 export function registerPhpHandlers(phpManager: PhpManager) {
@@ -16,6 +16,22 @@ export function registerPhpHandlers(phpManager: PhpManager) {
     await phpManager.downloadVersion(version, (progress) => {
       event.sender.send(progressChannel, progress);
     });
-    // Return nothing – success is implied by resolving the promise
+  });
+
+  ipcMain.handle('php:get-active-version', () => {
+    return phpManager.getActiveVersion();
+  });
+
+  ipcMain.handle('php:switch-global', async (_event, version: string) => {
+    await phpManager.switchGlobal(version);
+  });
+
+  ipcMain.handle('php:uninstall-version', async (_event, version: string) => {
+    await phpManager.uninstallVersion(version);
+  });
+
+  ipcMain.handle('app:open-directory', async (_event, dirPath: string) => {
+    const result = await shell.openPath(dirPath);
+    if (result) throw new Error(result);
   });
 }

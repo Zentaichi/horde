@@ -126,6 +126,70 @@ class PhpManager {
         }
     }
     /**
+     * Return the currently active Horde-managed PHP version from PATH.
+     */
+    getActiveVersion() {
+        const entries = (process.env.PATH || '').split(';');
+        for (const entry of entries) {
+            if (entry.startsWith(this.basePath)) {
+                const relative = entry.slice(this.basePath.length).replace(/^[\\/]+/, '');
+                const version = relative.split(/[\\/]/)[0];
+                if (version)
+                    return version;
+            }
+        }
+        return null;
+    }
+    /**
+     * Set a PHP version as the global default by updating the user PATH.
+     */
+    async switchGlobal(version) {
+        const versionPath = (0, path_1.join)(this.basePath, version);
+        if (!(0, fs_1.existsSync)(versionPath)) {
+            throw new Error(`PHP ${version} is not installed.`);
+        }
+        const currentPath = await this.readUserPath();
+        const entries = this.filterHordeEntries(currentPath.split(';').filter(Boolean));
+        entries.unshift(versionPath);
+        await this.writeUserPath(entries);
+    }
+    /**
+     * Uninstall a PHP version: clean PATH if active, then delete the directory.
+     */
+    async uninstallVersion(version) {
+        const versionPath = (0, path_1.join)(this.basePath, version);
+        if (!(0, fs_1.existsSync)(versionPath)) {
+            throw new Error(`PHP ${version} is not installed.`);
+        }
+        const activeVersion = this.getActiveVersion();
+        if (activeVersion === version) {
+            const currentPath = await this.readUserPath();
+            const entries = this.filterHordeEntries(currentPath.split(';').filter(Boolean));
+            await this.writeUserPath(entries);
+        }
+        await (0, fs_extra_1.remove)(versionPath);
+    }
+    async readUserPath() {
+        try {
+            const { stdout } = await execFileAsync('reg', [
+                'query', 'HKCU\\Environment', '/v', 'PATH',
+            ]);
+            const match = stdout.match(/PATH\s+REG_\w+\s+(.+)/);
+            return match ? match[1].trim() : '';
+        }
+        catch {
+            return '';
+        }
+    }
+    filterHordeEntries(entries) {
+        return entries.filter((entry) => !entry.includes('Horde\\php') && !entry.includes('Horde/php'));
+    }
+    async writeUserPath(entries) {
+        const newPath = entries.join(';');
+        await execFileAsync('setx', ['PATH', newPath]);
+        process.env.PATH = newPath;
+    }
+    /**
      * Helper: download file with progress callbacks.
      */
     async downloadFile(url, destPath, onProgress) {

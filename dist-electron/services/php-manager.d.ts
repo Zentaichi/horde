@@ -34,6 +34,21 @@ export declare class PhpManager {
      */
     downloadVersion(version: string, onProgress?: (info: ProgressInfo) => void): Promise<void>;
     /**
+     * Return the currently active Horde-managed PHP version from PATH.
+     */
+    getActiveVersion(): string | null;
+    /**
+     * Set a PHP version as the global default by updating the user PATH.
+     */
+    switchGlobal(version: string): Promise<void>;
+    /**
+     * Uninstall a PHP version: clean PATH if active, then delete the directory.
+     */
+    uninstallVersion(version: string): Promise<void>;
+    private readUserPath;
+    private filterHordeEntries;
+    private writeUserPath;
+    /**
      * Helper: download file with progress callbacks.
      */
     private downloadFile;

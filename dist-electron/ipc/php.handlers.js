@@ -14,7 +14,20 @@ function registerPhpHandlers(phpManager) {
         await phpManager.downloadVersion(version, (progress) => {
             event.sender.send(progressChannel, progress);
         });
-        // Return nothing – success is implied by resolving the promise
+    });
+    electron_1.ipcMain.handle('php:get-active-version', () => {
+        return phpManager.getActiveVersion();
+    });
+    electron_1.ipcMain.handle('php:switch-global', async (_event, version) => {
+        await phpManager.switchGlobal(version);
+    });
+    electron_1.ipcMain.handle('php:uninstall-version', async (_event, version) => {
+        await phpManager.uninstallVersion(version);
+    });
+    electron_1.ipcMain.handle('app:open-directory', async (_event, dirPath) => {
+        const result = await electron_1.shell.openPath(dirPath);
+        if (result)
+            throw new Error(result);
     });
 }
 //# sourceMappingURL=php.handlers.js.map
