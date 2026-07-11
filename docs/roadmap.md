@@ -14,9 +14,9 @@
 - [ ] MySQL portable download & initialise (implements `IDatabaseEngine`)
 - [ ] MySQL start/stop process control
 - [ ] Engine-agnostic IPC contract: `databases.*` (not `mysql.*`), with `instanceId` support
-- [ ] Dashboard UI with real-time status
+- [x] Dashboard UI with real-time status (card grid: PHP status widget + DB placeholder, active version indicator)
 - [ ] Settings persistence with SQLite
-- [ ] Light/dark theme toggle (CSS variables ready; toggle composable deferred to Package C)
+- [x] Light/dark theme toggle (useTheme composable + ThemeToggle button in nav bar)
 - [ ] Unit and basic E2E tests
 - [ ] GitHub Actions CI building Windows installer
 
@@ -70,4 +70,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-09 (Uninstall: PHP version removal + PATH cleanup. Reveal: open install dir in Explorer via shell.openPath)
+> Updated last: 2026-07-09 (Package C: Dashboard page, theme toggle, PhpStatusWidget, nav redesign)
