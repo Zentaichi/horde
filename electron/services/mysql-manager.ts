@@ -178,7 +178,7 @@ export class MySqlManager implements IDatabaseEngine {
   async stop(instanceId: string): Promise<void> {
     const entry = this.instances.get(instanceId);
     if (!entry || !entry.process) {
-      throw new Error(`Instance ${instanceId} is not running.`);
+      return;
     }
 
     const child = entry.process;
