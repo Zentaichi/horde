@@ -182,20 +182,29 @@ export class MySqlManager implements IDatabaseEngine {
     }
 
     const child = entry.process;
+    const pid = child.pid;
 
-    child.kill('SIGTERM');
+    if (pid && process.platform === 'win32') {
+      try {
+        await execFileAsync('taskkill', ['/PID', String(pid), '/T', '/F']);
+      } catch {
+        try { child.kill('SIGTERM'); } catch {}
+      }
+    } else {
+      child.kill('SIGTERM');
 
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        try { child.kill('SIGKILL'); } catch {}
-        resolve();
-      }, 5000);
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          try { child.kill('SIGKILL'); } catch {}
+          resolve();
+        }, 5000);
 
-      child.on('exit', () => {
-        clearTimeout(timeout);
-        resolve();
+        child.on('exit', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
       });
-    });
+    }
 
     entry.process = null;
   }
