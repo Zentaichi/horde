@@ -26,8 +26,8 @@
 
           <ProgressBar
             v-if="isDownloading(version)"
-            :progress="downloadProgress[progressKey(engine, version)]"
-            :started-at="downloadStartTimes[progressKey(engine, version)]"
+            :progress="downloadProgress[store.progressKey(engine, version)]"
+            :started-at="downloadStartTimes[store.progressKey(engine, version)]"
           />
         </CardContent>
       </Card>
