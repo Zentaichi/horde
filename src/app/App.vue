@@ -23,6 +23,13 @@
         >
           PHP
         </router-link>
+        <router-link
+          to="/databases"
+          class="text-sm px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          active-class="!text-foreground bg-accent"
+        >
+          Databases
+        </router-link>
       </div>
 
       <div class="ml-auto">

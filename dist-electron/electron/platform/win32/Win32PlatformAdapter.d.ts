@@ -7,6 +7,7 @@ export declare class Win32PlatformAdapter implements IPlatformAdapter {
     getBinaryExtension(): string;
     getPhpReleasesUrl(): string;
     getPhpDownloadUrl(zipPath: string): string;
+    getDatabaseReleasesUrl(engine: string): string;
     getDatabaseDownloadUrl(engine: string, version: string): string;
     getPathEntries(): Promise<string[]>;
     writePathEntries(entries: string[]): Promise<void>;

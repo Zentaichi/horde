@@ -28,12 +28,12 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 
 | Feature | Status |
 |---------|--------|
-| Download & install portable MySQL | 🔄 |
-| Start / Stop / Restart database service | 🔄 |
+| Download & install portable MySQL | ✔️ |
+| Start / Stop / Restart database service | ✔️ |
 | Create / Delete databases | 🔄 |
 | Support for MariaDB, PostgreSQL | ☑️ |
 | Import / Export SQL dumps | ☑️ |
-| Multiple simultaneous instances (different versions/ports) | ☑️ |
+| Multiple simultaneous instances (different versions/ports) | ✔️ |
 | Real-time query log viewer | ☑️ |
 
 ## Site & Domain Management

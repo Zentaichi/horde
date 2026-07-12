@@ -11,10 +11,11 @@
 - [x] PHP version list & download from windows.php.net (with progress bar: speed, ETA, byte counter)
 - [x] tsyringe DI container wired (services resolved from container; IPC handlers resolve via token)
 - [x] Global PHP version switching via PATH (user PATH via setx; reads current PATH from registry, removes old Horde entries, adds new version)
-- [ ] MySQL portable download & initialise (implements `IDatabaseEngine`)
-- [ ] MySQL start/stop process control
-- [ ] Engine-agnostic IPC contract: `databases.*` (not `mysql.*`), with `instanceId` support
-- [x] Dashboard UI with real-time status (card grid: PHP status widget + DB placeholder, active version indicator)
+- [x] `IDatabaseEngine` interface (18 methods: version lifecycle + instance lifecycle + data ops) + `DatabaseRegistry` (multi-engine instance tracking)
+- [x] MySQL portable download & initialise (`MySqlManager` implements `IDatabaseEngine`: download via adapter, `mysqld --initialize-insecure`, spawn/kill process, port check)
+- [x] MySQL start/stop process control (spawn with SIGTERM grace + SIGKILL fallback, status polling)
+- [x] Engine-agnostic IPC contract: `databases.*` (list-engines, download, initialize, start/stop/get-status, list-instances, remove-instance, onDownloadProgress)
+- [x] Dashboard UI with real-time status (PhpStatusWidget + DatabaseStatusWidget: green/gray dots, running instance counts, direct nav links)
 - [ ] Settings persistence with SQLite
 - [x] Light/dark theme toggle (useTheme composable + ThemeToggle button in nav bar)
 - [ ] Unit and basic E2E tests
@@ -70,4 +71,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-12 (Package D: IPlatformAdapter+Win32PlatformAdapter, tsyringe DI container, PHP download/PATH/I/O routed through adapter)
+> Updated last: 2026-07-13 (Package E: MySQL engine + UI — IDatabaseEngine, MySqlManager, DatabaseRegistry, databases.* IPC, DatabasePage, DatabaseStatusWidget, nav)

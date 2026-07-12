@@ -8,6 +8,7 @@ export interface IPlatformAdapter {
 
   getPhpReleasesUrl(): string;
   getPhpDownloadUrl(zipPath: string): string;
+  getDatabaseReleasesUrl(engine: string): string;
   getDatabaseDownloadUrl(engine: string, version: string): string;
 
   getPathEntries(): Promise<string[]>;

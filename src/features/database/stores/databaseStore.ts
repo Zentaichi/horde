@@ -1,0 +1,164 @@
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import type { DatabaseInstance, DatabaseVersion, DownloadProgress } from '@/shared/types/database';
+
+export const useDatabaseStore = defineStore('database', () => {
+  const engines = ref<string[]>([]);
+  const availableVersions = ref<Record<string, string[]>>({});
+  const installedVersions = ref<Record<string, string[]>>({});
+  const instances = ref<DatabaseInstance[]>([]);
+  const downloadProgress = ref<Record<string, DownloadProgress>>({});
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  function clearError() {
+    error.value = null;
+  }
+
+  function progressKey(engine: string, version: string): string {
+    return `${engine}/${version}`;
+  }
+
+  async function fetchEngines() {
+    clearError();
+    try {
+      engines.value = await window.electronAPI.databases.listEngines();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch engines';
+      console.error(e);
+    }
+  }
+
+  async function fetchAvailable(engine: string) {
+    clearError();
+    try {
+      availableVersions.value[engine] = await window.electronAPI.databases.listAvailable(engine);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to fetch ${engine} versions`;
+      console.error(e);
+    }
+  }
+
+  async function fetchInstalled(engine: string) {
+    clearError();
+    try {
+      installedVersions.value[engine] = await window.electronAPI.databases.listInstalled(engine);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to fetch installed ${engine} versions`;
+      console.error(e);
+    }
+  }
+
+  async function fetchInstances() {
+    clearError();
+    try {
+      instances.value = await window.electronAPI.databases.listInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch instances';
+      console.error(e);
+    }
+  }
+
+  async function downloadVersion(engine: string, version: string) {
+    clearError();
+    const key = progressKey(engine, version);
+    const unsubscribe = window.electronAPI.databases.onDownloadProgress(
+      engine,
+      version,
+      (progress) => {
+        downloadProgress.value[key] = progress;
+      },
+    );
+
+    try {
+      await window.electronAPI.databases.download(engine, version);
+      await fetchInstalled(engine);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to download ${engine} ${version}`;
+      console.error(e);
+    } finally {
+      unsubscribe();
+      setTimeout(() => {
+        delete downloadProgress.value[key];
+      }, 3000);
+    }
+  }
+
+  async function initializeInstance(config: {
+    engine: string;
+    version: string;
+    port: number;
+    label?: string;
+  }) {
+    loading.value = true;
+    clearError();
+    try {
+      await window.electronAPI.databases.initialize({
+        engine: config.engine,
+        version: config.version,
+        port: config.port,
+        label: config.label,
+      });
+      await fetchInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to initialize instance';
+      console.error(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function startInstance(instanceId: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.start(instanceId);
+      await fetchInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to start instance';
+      console.error(e);
+    }
+  }
+
+  async function stopInstance(instanceId: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.stop(instanceId);
+      await fetchInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to stop instance';
+      console.error(e);
+    }
+  }
+
+  async function removeInstance(instanceId: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.removeInstance(instanceId);
+      await fetchInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to remove instance';
+      console.error(e);
+    }
+  }
+
+  return {
+    engines,
+    availableVersions,
+    installedVersions,
+    instances,
+    downloadProgress,
+    loading,
+    error,
+    clearError,
+    fetchEngines,
+    fetchAvailable,
+    fetchInstalled,
+    fetchInstances,
+    downloadVersion,
+    initializeInstance,
+    startInstance,
+    stopInstance,
+    removeInstance,
+    progressKey,
+  };
+});

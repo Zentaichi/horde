@@ -15,5 +15,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener(channel, listener);
     },
   },
+  databases: {
+    listEngines: () => ipcRenderer.invoke('databases:list-engines'),
+    listAvailable: (engine: string) => ipcRenderer.invoke('databases:list-available', engine),
+    listInstalled: (engine: string) => ipcRenderer.invoke('databases:list-installed', engine),
+    download: (engine: string, version: string) =>
+      ipcRenderer.invoke('databases:download', engine, version),
+    initialize: (config: any) => ipcRenderer.invoke('databases:initialize', config),
+    start: (instanceId: string) => ipcRenderer.invoke('databases:start', instanceId),
+    stop: (instanceId: string) => ipcRenderer.invoke('databases:stop', instanceId),
+    getStatus: (instanceId: string) => ipcRenderer.invoke('databases:get-status', instanceId),
+    listInstances: () => ipcRenderer.invoke('databases:list-instances'),
+    removeInstance: (instanceId: string) => ipcRenderer.invoke('databases:remove-instance', instanceId),
+    onDownloadProgress: (
+      engine: string,
+      version: string,
+      callback: (progress: any) => void,
+    ) => {
+      const channel = `database:download-progress-${engine}-${version}`;
+      const listener = (_event: any, progress: any) => callback(progress);
+      ipcRenderer.on(channel, listener);
+      return () => ipcRenderer.removeListener(channel, listener);
+    },
+  },
   openDirectory: (path: string) => ipcRenderer.invoke('app:open-directory', path),
 });

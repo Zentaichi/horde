@@ -31,6 +31,12 @@ let Win32PlatformAdapter = class Win32PlatformAdapter {
     getPhpDownloadUrl(zipPath) {
         return `https://windows.php.net/downloads/releases/${zipPath}`;
     }
+    getDatabaseReleasesUrl(engine) {
+        if (engine === 'mysql') {
+            return 'https://downloads.mysql.com/archives/community/';
+        }
+        throw new Error(`No releases URL configured for engine: ${engine}`);
+    }
     getDatabaseDownloadUrl(engine, version) {
         if (engine === 'mysql') {
             return `https://dev.mysql.com/get/Downloads/MySQL-${version.slice(0, 4)}/mysql-${version}-winx64.zip`;

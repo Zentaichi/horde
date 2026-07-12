@@ -39,9 +39,14 @@ const path = __importStar(require("path"));
 const tsyringe_1 = require("tsyringe");
 const Win32PlatformAdapter_1 = require("./platform/win32/Win32PlatformAdapter");
 const php_manager_1 = require("./services/php-manager");
+const mysql_manager_1 = require("./services/mysql-manager");
+const database_registry_1 = require("./services/database-registry");
 const php_handlers_1 = require("./ipc/php.handlers");
+const database_handlers_1 = require("./ipc/database.handlers");
 tsyringe_1.container.registerSingleton('IPlatformAdapter', Win32PlatformAdapter_1.Win32PlatformAdapter);
 tsyringe_1.container.registerSingleton('IPhpManager', php_manager_1.PhpManager);
+tsyringe_1.container.registerSingleton('IDatabaseEngine:mysql', mysql_manager_1.MySqlManager);
+tsyringe_1.container.registerSingleton(database_registry_1.DatabaseRegistry, database_registry_1.DatabaseRegistry);
 let mainWindow = null;
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
@@ -67,6 +72,10 @@ function createWindow() {
 }
 electron_1.app.whenReady().then(() => {
     (0, php_handlers_1.registerPhpHandlers)();
+    const mysqlManager = tsyringe_1.container.resolve('IDatabaseEngine:mysql');
+    const databaseRegistry = tsyringe_1.container.resolve(database_registry_1.DatabaseRegistry);
+    databaseRegistry.register(mysqlManager);
+    (0, database_handlers_1.registerDatabaseHandlers)();
     createWindow();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)

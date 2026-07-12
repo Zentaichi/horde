@@ -6,10 +6,16 @@ import type { IPlatformAdapter } from './platform/IPlatformAdapter';
 import { Win32PlatformAdapter } from './platform/win32/Win32PlatformAdapter';
 import type { IPhpManager } from './services/interfaces/IPhpManager';
 import { PhpManager } from './services/php-manager';
+import type { IDatabaseEngine } from './services/interfaces/IDatabaseEngine';
+import { MySqlManager } from './services/mysql-manager';
+import { DatabaseRegistry } from './services/database-registry';
 import { registerPhpHandlers } from './ipc/php.handlers';
+import { registerDatabaseHandlers } from './ipc/database.handlers';
 
 container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
 container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
+container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManager);
+container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -39,6 +45,11 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   registerPhpHandlers();
+
+  const mysqlManager = container.resolve<IDatabaseEngine>('IDatabaseEngine:mysql');
+  const databaseRegistry = container.resolve(DatabaseRegistry);
+  databaseRegistry.register(mysqlManager);
+  registerDatabaseHandlers();
 
   createWindow();
 
