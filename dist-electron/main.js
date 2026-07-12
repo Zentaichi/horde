@@ -33,10 +33,15 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata");
 const electron_1 = require("electron");
 const path = __importStar(require("path"));
+const tsyringe_1 = require("tsyringe");
+const Win32PlatformAdapter_1 = require("./platform/win32/Win32PlatformAdapter");
 const php_manager_1 = require("./services/php-manager");
 const php_handlers_1 = require("./ipc/php.handlers");
+tsyringe_1.container.registerSingleton('IPlatformAdapter', Win32PlatformAdapter_1.Win32PlatformAdapter);
+tsyringe_1.container.registerSingleton('IPhpManager', php_manager_1.PhpManager);
 let mainWindow = null;
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
@@ -61,9 +66,7 @@ function createWindow() {
     }
 }
 electron_1.app.whenReady().then(() => {
-    // Now it's safe to instantiate services and register IPC handlers
-    const phpManager = new php_manager_1.PhpManager();
-    (0, php_handlers_1.registerPhpHandlers)(phpManager);
+    (0, php_handlers_1.registerPhpHandlers)();
     createWindow();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)

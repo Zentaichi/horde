@@ -6,10 +6,10 @@
 
 - [x] Project scaffolding (Electron + Vue 3 + Tailwind + Feature Sliced Design)
 - [x] shadcn-vue component library installed (Button, Card, Progress, Badge) + theme CSS infrastructure
-- [ ] `IPlatformAdapter` interface + `Win32PlatformAdapter` implementation
-- [ ] `IDatabaseEngine` + `IRuntimeManager` shared interfaces (contracts written before MySQL/PHP manager code grows)
+- [x] `IPlatformAdapter` interface (12 methods: PATH, ZIP, URLs, binary resolution) + `Win32PlatformAdapter` implementation
+- [x] PHP download URL routing via `IPlatformAdapter` (releases URL, download URL construction, extraction, PATH I/O all routed through adapter)
 - [x] PHP version list & download from windows.php.net (with progress bar: speed, ETA, byte counter)
-- [ ] PHP download URL routing via `IPlatformAdapter` (currently hardcoded in `PhpManager`)
+- [x] tsyringe DI container wired (services resolved from container; IPC handlers resolve via token)
 - [x] Global PHP version switching via PATH (user PATH via setx; reads current PATH from registry, removes old Horde entries, adds new version)
 - [ ] MySQL portable download & initialise (implements `IDatabaseEngine`)
 - [ ] MySQL start/stop process control
@@ -70,4 +70,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-09 (Package C: Dashboard page, theme toggle, PhpStatusWidget, nav redesign)
+> Updated last: 2026-07-12 (Package D: IPlatformAdapter+Win32PlatformAdapter, tsyringe DI container, PHP download/PATH/I/O routed through adapter)

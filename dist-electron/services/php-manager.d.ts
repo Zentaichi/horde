@@ -1,55 +1,19 @@
-export interface ProgressInfo {
-    percent: number;
-    transferredBytes: number;
-    totalBytes: number;
-}
-export interface PhpVersion {
-    version: string;
-    path: string;
-    installed: boolean;
-}
-export declare class PhpManager {
+import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
+import type { IPhpManager } from './interfaces/IPhpManager';
+import type { PhpVersion, DownloadProgress } from '../../src/shared/types/php';
+export declare class PhpManager implements IPhpManager {
+    private readonly platform;
     private readonly basePath;
     private releasesCache;
-    constructor();
-    /**
-     * Fetch releases JSON if not already cached.
-     */
-    private fetchReleases;
-    /**
-     * Get available PHP versions – sorted newest first.
-     */
+    constructor(platform: IPlatformAdapter);
     getAvailableVersions(): Promise<string[]>;
-    /**
-     * List locally installed PHP versions.
-     */
     getInstalledVersions(): PhpVersion[];
-    /**
-     * Find the download URL for a given version.
-     * Priority: nts x64, then any nts, then first available.
-     */
-    private getDownloadUrl;
-    /**
-     * Download and extract a specific PHP version.
-     */
-    downloadVersion(version: string, onProgress?: (info: ProgressInfo) => void): Promise<void>;
-    /**
-     * Return the currently active Horde-managed PHP version from PATH.
-     */
+    downloadVersion(version: string, onProgress?: (info: DownloadProgress) => void): Promise<void>;
     getActiveVersion(): string | null;
-    /**
-     * Set a PHP version as the global default by updating the user PATH.
-     */
     switchGlobal(version: string): Promise<void>;
-    /**
-     * Uninstall a PHP version: clean PATH if active, then delete the directory.
-     */
     uninstallVersion(version: string): Promise<void>;
-    private readUserPath;
+    private fetchReleases;
+    private getDownloadUrl;
     private filterHordeEntries;
-    private writeUserPath;
-    /**
-     * Helper: download file with progress callbacks.
-     */
     private downloadFile;
 }

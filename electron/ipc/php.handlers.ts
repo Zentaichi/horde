@@ -1,7 +1,10 @@
 import { ipcMain, shell } from 'electron';
-import { PhpManager } from '../services/php-manager';
+import { container } from 'tsyringe';
+import type { IPhpManager } from '../services/interfaces/IPhpManager';
 
-export function registerPhpHandlers(phpManager: PhpManager) {
+export function registerPhpHandlers() {
+  const phpManager = container.resolve<IPhpManager>('IPhpManager');
+
   ipcMain.handle('php:get-available-versions', async () => {
     return await phpManager.getAvailableVersions();
   });
