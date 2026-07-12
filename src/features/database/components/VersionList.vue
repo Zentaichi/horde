@@ -10,18 +10,60 @@
               <span class="font-semibold">MySQL {{ version }}</span>
               <Badge v-if="isInstalled(version)" variant="secondary">Installed</Badge>
             </div>
-            <Button
-              v-if="!isDownloading(version)"
-              :variant="isInstalled(version) ? 'outline' : 'default'"
-              size="sm"
-              :disabled="isInstalled(version)"
-              @click="$emit('download', version)"
-            >
-              {{ isInstalled(version) ? 'Installed' : 'Download' }}
-            </Button>
-            <Button v-else variant="outline" size="sm" disabled>
-              Downloading...
-            </Button>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <template v-if="isInstalled(version)">
+                <template v-if="confirmingUninstall === version">
+                  <span class="text-xs text-destructive font-medium">Are you sure?</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="onConfirmUninstall(version)"
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    @click="confirmingUninstall = null"
+                  >
+                    No
+                  </Button>
+                </template>
+                <template v-else>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="text-muted-foreground hover:text-destructive"
+                    @click="confirmingUninstall = version"
+                  >
+                    Uninstall
+                  </Button>
+                </template>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 shrink-0"
+                  title="Open in Explorer"
+                  @click="store.openVersionDir(engine, version)"
+                >
+                  <FolderOpen class="size-3.5" />
+                </Button>
+              </template>
+              <template v-else>
+                <Button
+                  v-if="!isDownloading(version)"
+                  variant="default"
+                  size="sm"
+                  @click="$emit('download', version)"
+                >
+                  Download
+                </Button>
+                <Button v-else variant="outline" size="sm" disabled>
+                  Downloading...
+                </Button>
+              </template>
+            </div>
           </div>
 
           <ProgressBar
@@ -40,12 +82,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { useDatabaseStore } from '../stores/databaseStore';
 import { storeToRefs } from 'pinia';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
+import { FolderOpen } from '@lucide/vue';
 import ProgressBar from '@/shared/ui/ProgressBar.vue';
 
 const store = useDatabaseStore();
@@ -59,6 +102,8 @@ const props = defineProps<{
 defineEmits<{
   (e: 'download', version: string): void;
 }>();
+
+const confirmingUninstall = ref<string | null>(null);
 
 const downloadStartTimes = reactive<Record<string, number>>({});
 
@@ -85,5 +130,10 @@ function isDownloading(version: string) {
 
 function isInstalled(version: string) {
   return (installedVersions.value[props.engine] || []).includes(version);
+}
+
+async function onConfirmUninstall(version: string) {
+  await store.uninstallVersion(props.engine, version);
+  confirmingUninstall.value = null;
 }
 </script>
