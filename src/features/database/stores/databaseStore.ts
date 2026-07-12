@@ -141,6 +141,22 @@ export const useDatabaseStore = defineStore('database', () => {
     }
   }
 
+  async function uninstallVersion(engine: string, version: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.uninstall(engine, version);
+      await fetchInstalled(engine);
+      await fetchInstances();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : `Failed to uninstall ${engine} ${version}`;
+      console.error(e);
+    }
+  }
+
+  function openVersionDir(engine: string, version: string) {
+    window.electronAPI.databases.openInstallDir(engine, version);
+  }
+
   return {
     engines,
     availableVersions,
@@ -159,6 +175,8 @@ export const useDatabaseStore = defineStore('database', () => {
     startInstance,
     stopInstance,
     removeInstance,
+    uninstallVersion,
+    openVersionDir,
     progressKey,
   };
 });

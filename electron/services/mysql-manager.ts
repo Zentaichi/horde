@@ -106,7 +106,23 @@ export class MySqlManager implements IDatabaseEngine {
       }
     }
 
-    await remove(versionDir);
+    if (process.platform === 'win32') {
+      try {
+        await execFileAsync('taskkill', ['/F', '/IM', 'mysqld.exe']);
+      } catch {}
+    }
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await remove(versionDir);
+        return;
+      } catch (err: any) {
+        if (attempt === 4 || (err.code !== 'EPERM' && err.code !== 'EBUSY')) {
+          throw err;
+        }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
   }
 
   async initialize(config: DatabaseInstanceConfig): Promise<void> {

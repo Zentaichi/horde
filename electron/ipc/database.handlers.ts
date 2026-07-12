@@ -1,11 +1,13 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { container } from 'tsyringe';
+import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
 import type { IDatabaseEngine } from '../services/interfaces/IDatabaseEngine';
 import { DatabaseRegistry } from '../services/database-registry';
 import type { DatabaseInstanceConfig } from '../types/database';
 
 export function registerDatabaseHandlers() {
   const registry = container.resolve(DatabaseRegistry);
+  const platform = container.resolve<IPlatformAdapter>('IPlatformAdapter');
 
   ipcMain.handle('databases:list-engines', async () => {
     return registry.listEngines();
@@ -83,6 +85,25 @@ export function registerDatabaseHandlers() {
     async (_event, instanceId: string) => {
       const inst = registry.resolveEngineByInstance(instanceId);
       await inst.removeInstance(instanceId);
+    },
+  );
+
+  ipcMain.handle(
+    'databases:uninstall',
+    async (_event, engine: string, version: string) => {
+      const inst = registry.findEngine(engine);
+      await inst.uninstall(version);
+    },
+  );
+
+  ipcMain.handle(
+    'databases:open-install-dir',
+    async (_event, engine: string, version: string) => {
+      const installDir = platform.getDefaultRuntimeInstallDir(engine);
+      const { join } = require('path');
+      const versionDir = join(installDir, version);
+      const result = await shell.openPath(versionDir);
+      if (result) throw new Error(result);
     },
   );
 }
