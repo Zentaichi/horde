@@ -33,7 +33,7 @@ const runningInstances = computed(() =>
 </script>
 
 <template>
-  <Card class="h-full">
+  <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
       <CardTitle class="flex items-center gap-2 text-base">
         <Circle
@@ -69,7 +69,7 @@ const runningInstances = computed(() =>
       </p>
     </CardContent>
 
-    <CardFooter>
+    <CardFooter class="mt-auto">
       <Button
         variant="outline"
         size="sm"
