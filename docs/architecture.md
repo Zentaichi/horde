@@ -38,54 +38,68 @@ electron/               # Main process
   main.ts               # Entry point, DI container setup, window creation
   preload.ts            # contextBridge exposure
   platform/             # OS-specific implementations
-    IPlatformAdapter.ts # Platform abstraction interface
-    win32.ts            # Windows implementation
+    IPlatformAdapter.ts # Platform abstraction interface (13 methods)
+    win32/
+      Win32PlatformAdapter.ts
   services/
-    interfaces/         # Shared contracts
-      IRuntimeManager.ts
+    interfaces/
       IPhpManager.ts
       IDatabaseEngine.ts
-      IMySqlManager.ts
     php-manager.ts      # Implements IPhpManager
-    mysql-manager.ts    # Implements IMySqlManager
+    mysql-manager.ts    # Implements IDatabaseEngine
+    database-registry.ts # Multi-engine instance tracker
   ipc/
     php.handlers.ts
-    mysql.handlers.ts
+    database.handlers.ts
   types/
-    ipc.d.ts            # Typed IPC contract
+    php.ts              # PhpVersion, DownloadProgress
+    database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
 
 src/                    # Renderer process
-  app/                  # Global setup, router, Pinia stores
-  pages/                # Route-level components
+  app/                  # Global setup, router
+    App.vue             # App shell with nav bar
+    router.ts           # Route definitions
+    main.ts             # App entry, Pinia setup
+  pages/
+    DashboardPage.vue
+    PhpManagerPage.vue
+    DatabasePage.vue
   features/
     php/                # PHP feature module
-    mysql/              # MySQL feature module
-  widgets/              # Composition of multiple entities/features
-  entities/             # Plain business models
-  shared/               # Reusable UI kit and utilities
+      stores/           # Pinia store
+      components/       # UI components
+    database/           # Database feature module (engine-agnostic)
+      stores/
+      components/
+  widgets/              # Composition of multiple features
+    PhpStatusWidget.vue
+    DatabaseStatusWidget.vue
+  shared/               # Reusable UI kit, types, composables
+    ui/                 # shadcn-vue components
+    types/              # Shared type definitions
+    composables/        # Shared composables
 ```
 
 ## Backend: Service Layer with Dependency Injection
 
-Main process services implement shared interfaces (`IPhpManager`, `IMySqlManager`, `IDatabaseEngine`, `IRuntimeManager`). A lightweight DI container (`tsyringe`) manages dependencies and facilitates unit testing with mocked implementations.
+Main process services implement shared interfaces (`IPhpManager`, `IDatabaseEngine`). A lightweight DI container (`tsyringe`) manages dependencies and facilitates unit testing with mocked implementations.
 
-> **Status:** DI is designed and adopted via [ADR-0002](adr/0002-service-layer-di-strategy.md) but not yet fully wired. Currently `main.ts` instantiates `PhpManager` directly. The refactor to container-based resolution is an early Phase 1 task.
+> **Status:** DI is fully wired (ADR-0002 implemented). `main.ts` registers `IPlatformAdapter`, `IPhpManager`, `IDatabaseEngine:mysql`, and `DatabaseRegistry` via `container.registerSingleton`. IPC handlers resolve services from the container. All services receive `IPlatformAdapter` via constructor injection.
 
 ### Service Boundaries
 
 | Service | Interface | Responsibilities |
 |---------|-----------|-----------------|
-| `PhpManager` | `IPhpManager` (extends `IRuntimeManager`) | Download, list, switch, run built-in server |
-| `MySqlManager` | `IMySqlManager` (extends `IDatabaseEngine`) | Download portable MySQL, initialize data directory, start/stop process, create databases |
-| `Downloader` | (utility) | Generic binary download with progress callbacks (used by both managers) |
-| `SettingsStore` | (concrete) | Abstraction over `better-sqlite3` for app configuration |
-| `Win32PlatformAdapter` | `IPlatformAdapter` | OS-specific paths, PATH manipulation, ZIP extraction, binary resolution |
+| `PhpManager` | `IPhpManager` | PHP version list/download/switch/uninstall, PATH manipulation |
+| `MySqlManager` | `IDatabaseEngine` | MySQL download/extract, instance initialize, start/stop process control, instance status |
+| `DatabaseRegistry` | (concrete, singleton) | Multi-engine instance tracking, engine resolution by instanceId |
+| `Win32PlatformAdapter` | `IPlatformAdapter` | OS-specific: PATH (reg query/setx), ZIP extraction (PowerShell), download URLs, binary extension, install directories |
 
 All OS-coupled operations flow through `IPlatformAdapter` so that services never branch on `process.platform`. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
 
 ### Engine Registry
 
-Database engines are resolved by name at runtime. The DI container maps `'mysql'` to `IMySqlManager`, and future engines (`'postgresql'`, `'mariadb'`) register against the same `IDatabaseEngine` token with a discriminator. This means Phase 3 adds engines without changing any Phase 1 or Phase 2 code. See [ADR-0003](adr/0003-multi-engine-database-abstraction.md).
+Database engines are registered by token. The DI container maps `'IDatabaseEngine:mysql'` to `MySqlManager`. `DatabaseRegistry` resolves all registered engines at startup and delegates instance lifecycle calls (start/stop/getStatus) to the correct engine by instanceId. This means Phase 3 adds PostgreSQL and MariaDB without changing any Phase 1/2 code. See [ADR-0003](adr/0003-multi-engine-database-abstraction.md).
 
 ## Platform Abstraction
 
@@ -102,50 +116,45 @@ The interface is defined now; only the Windows implementation is built for MVP. 
 
 ## IPC Contract
 
-All IPC channels are defined as typed request/response pairs in `electron/types/ipc.d.ts`. The preload script exposes a minimal API object to the renderer:
+All IPC channels are defined as typed request/response pairs. The preload script exposes a minimal API object to the renderer via `contextBridge.exposeInMainWorld('electronAPI', ...)`.
 
 ```ts
 interface ElectronAPI {
   php: {
-    listAvailable(): Promise<string[]>;
-    listInstalled(): Promise<PhpVersion[]>;
-    download(version: string, onProgress: (pct: number) => void): Promise<void>;
-    switchGlobal(version: string): Promise<void>;
+    getAvailableVersions(): Promise<string[]>;
+    getInstalledVersions(): Promise<PhpVersion[]>;
+    downloadVersion(version: string): Promise<void>;
     getActiveVersion(): Promise<string | null>;
-    uninstall(version: string): Promise<void>;
-    runDevServer(docRoot: string, port: number): Promise<void>;
-    stopDevServer(): Promise<void>;
-    getDevServerStatus(): Promise<{ running: boolean; port?: number }>;
-    listExtensions(version: string): Promise<{ name: string; enabled: boolean }[]>;
+    switchGlobal(version: string): Promise<void>;
+    uninstallVersion(version: string): Promise<void>;
+    onDownloadProgress(version: string, callback: (p: DownloadProgress) => void): () => void;
   };
 
   databases: {
     listEngines(): Promise<string[]>;
-    download(engine: string, version: string, onProgress: (pct: number) => void): Promise<void>;
-    listInstalledVersions(engine: string): Promise<string[]>;
+    listAvailable(engine: string): Promise<string[]>;
+    listInstalled(engine: string): Promise<string[]>;
+    download(engine: string, version: string): Promise<void>;
     initialize(config: DatabaseInstanceConfig): Promise<void>;
     start(instanceId: string): Promise<void>;
     stop(instanceId: string): Promise<void>;
-    restart(instanceId: string): Promise<void>;
     getStatus(instanceId: string): Promise<DatabaseInstanceStatus>;
-    listInstances(engine: string): Promise<DatabaseInstanceStatus[]>;
+    listInstances(): Promise<DatabaseInstanceStatus[]>;
     removeInstance(instanceId: string): Promise<void>;
-    createDatabase(instanceId: string, name: string): Promise<void>;
-    dropDatabase(instanceId: string, name: string): Promise<void>;
-    listDatabases(instanceId: string): Promise<string[]>;
+    uninstall(engine: string, version: string): Promise<void>;
+    openInstallDir(engine: string, version: string): Promise<void>;
+    onDownloadProgress(engine: string, version: string, callback: (p: DownloadProgress) => void): () => void;
   };
 
-  events: {
-    on(channel: string, callback: (...args: any[]) => void): () => void;
-  };
+  openDirectory(path: string): Promise<void>;
 }
 ```
 
 Key design decisions:
 - `databases.*` is engine-agnostic — the renderer never imports `mysql` or `postgres` specifically. New engines are additive.
-- Every database channel uses `instanceId` rather than relying on a singleton. This supports multiple simultaneous instances in Phase 3 without breaking changes.
-- `events.on()` returns an unsubscribe function to prevent listener leaks.
-- Phase 2 methods (`runDevServer`, `listExtensions`, etc.) exist on the typed contract from day one but throw `'not implemented'` until built. This prevents the renderer from needing API shape changes when features are added.
+- Every database channel uses `instanceId` rather than relying on a singleton. This supports multiple simultaneous instances from day one.
+- `onDownloadProgress()` returns an unsubscribe function to prevent listener leaks.
+- Progress push channels follow the pattern `php:download-progress-{version}` and `database:download-progress-{engine}-{version}`.
 
 ## Data Flow
 

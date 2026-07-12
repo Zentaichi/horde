@@ -1,30 +1,31 @@
 # Horde — Local PHP & Database Version Manager
 
-**Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL, PostgreSQL, and MariaDB servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
+**Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** MVP (Phase 1) under active development. Windows-only for now; macOS and Linux planned for Phase 6.
+> **Status:** MVP (Phase 1) under active development — 15/18 items complete. Windows-only for now; macOS and Linux planned for Phase 6.
 
 ## Core MVP Features (Phase 1)
 
 - **PHP Version Manager**
-  Download, list, and globally switch PHP versions (Windows binaries from windows.php.net).
+  Download, list, globally switch, uninstall, and reveal PHP versions (Windows binaries from windows.php.net).
 - **MySQL Portable Server**
-  Download, initialise, and start/stop a MySQL instance on a configurable port.
+  Download multiple MySQL versions, create per-instance data directories, start/stop instances on configurable ports, with simultaneous multi-instance support.
 - **Dashboard UI**
-  Real-time status of installed versions and running services, with light/dark theme toggle.
-- **Local SQLite Store**
-  All app settings and state are persisted in a single file.
+  Real-time status cards for PHP (active version, installed count) and databases (running instances, ports), with light/dark theme toggle.
+- **Platform Abstraction**
+  All OS-specific logic (PATH, ZIP extraction, binary URLs) routed through `IPlatformAdapter` — adding macOS/Linux requires writing one class per platform, zero service code changes.
 
-## Planned Parity (Post-MVP)
+## Planned (Post-MVP)
 
 - Per-project PHP version via `.php-version` file
 - PHP extension manager & `php.ini` editor
 - Built-in development server with logs
 - System tray with quick actions & service status
 - Auto-start services on boot
+- Settings persistence with SQLite
 - PostgreSQL and MariaDB engine support
 - Database import/export (SQL dump)
-- Multiple simultaneous database instances
+- Create / Delete databases via UI
 - Built-in HTTPS via `mkcert` + Caddy reverse proxy
 - Local domain mapping & hosts file integration
 - CLI companion tool (`horde` command)
@@ -49,19 +50,31 @@ The codebase follows **Feature Sliced Design** (frontend) with a **service layer
 electron/               # Main process
   main.ts               # Entry point, DI container, window creation
   preload.ts            # contextBridge (typed IPC)
-  platform/             # OS-specific adapters (IPlatformAdapter + win32/darwin/linux)
-  services/             # Service classes (PhpManager, MySqlManager, Downloader)
-    interfaces/         # Shared contracts (IRuntimeManager, IDatabaseEngine, IPhpManager)
-  ipc/                  # IPC handler registrations
-  types/ipc.d.ts        # Typed IPC contract
+  platform/             # OS-specific adapters
+    IPlatformAdapter.ts # Platform abstraction interface (13 methods)
+    win32/              # Windows implementation (PowerShell, reg query, setx)
+  services/
+    interfaces/         # Shared contracts
+      IPhpManager.ts    # PHP service contract
+      IDatabaseEngine.ts # Multi-engine database contract (18 methods)
+    php-manager.ts      # Implements IPhpManager
+    mysql-manager.ts    # Implements IDatabaseEngine
+    database-registry.ts # Multi-engine instance tracker
+  ipc/
+    php.handlers.ts     # php:* channels
+    database.handlers.ts # databases:* channels
+  types/
+    php.ts              # PhpVersion, DownloadProgress
+    database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
 
 src/                    # Renderer process
-  app/                  # Global setup, router, Pinia stores
-  pages/                # Route-level components
-  features/             # Self-contained feature modules (php/, mysql/, ...)
-  widgets/              # Cross-feature compositions
-  entities/             # Plain business models
-  shared/               # Reusable UI kit and utilities
+  app/                  # Global setup, router, App shell
+  pages/                # Route-level components (Dashboard, PHP, Databases)
+  features/
+    php/                # PHP feature module (store, components)
+    database/           # Database feature module (store, components)
+  widgets/              # Cross-feature compositions (status cards)
+  shared/               # Reusable UI kit (shadcn-vue), types, composables
 ```
 
 Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
