@@ -25,7 +25,20 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="space-y-3">
-        <VersionList :engine="selectedEngine" :versions="availableVersions[selectedEngine] || []" @download="onDownload" />
+        <div class="relative">
+          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            v-model="versionFilter"
+            type="text"
+            placeholder="Filter versions..."
+            class="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <VersionList
+          :engine="selectedEngine"
+          :versions="filteredAvailable"
+          @download="onDownload"
+        />
       </div>
 
       <div>
@@ -36,10 +49,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useDatabaseStore } from '@/features/database/stores/databaseStore';
 import { storeToRefs } from 'pinia';
-import { RefreshCw, X } from '@lucide/vue';
+import { RefreshCw, Search, X } from '@lucide/vue';
 import { Button } from '@/shared/ui/button';
 import VersionList from '@/features/database/components/VersionList.vue';
 import InstanceList from '@/features/database/components/InstanceList.vue';
@@ -47,6 +60,13 @@ import InstanceList from '@/features/database/components/InstanceList.vue';
 const store = useDatabaseStore();
 const { availableVersions, loading, error } = storeToRefs(store);
 const selectedEngine = ref('mysql');
+const versionFilter = ref('');
+
+const filteredAvailable = computed(() => {
+  const list = availableVersions.value[selectedEngine.value] || [];
+  if (!versionFilter.value.trim()) return list;
+  return list.filter((v) => v.includes(versionFilter.value.trim()));
+});
 
 onMounted(async () => {
   await store.fetchEngines();
