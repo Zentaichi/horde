@@ -88,10 +88,18 @@ Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
 
 Full architecture: [docs/architecture.md](docs/architecture.md)
 
+## Prerequisites
+
+- **[Node.js](https://nodejs.org/)** 24+
+- **[Python](https://www.python.org/downloads/)** 3.9+ — required by `node-gyp` to compile native modules (`better-sqlite3`). Ensure `python` is available in your PATH.
+- **Windows:** [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) with the "Desktop development with C++" workload (includes MSVC v143 and Windows 10/11 SDK). Required to compile `better-sqlite3`'s native addon from source.
+
+> The `postinstall` script runs `electron-rebuild` automatically after `npm install` to rebuild native modules against Electron's Node ABI. If you see errors about missing `better_sqlite3.node`, verify the prerequisites above are met and run `npx electron-rebuild -f -w better-sqlite3`.
+
 ## Quick Start (Development)
 
 ```bash
-# Install dependencies
+# Install dependencies (including native module rebuild)
 npm install
 
 # Start Electron + Vite dev server
