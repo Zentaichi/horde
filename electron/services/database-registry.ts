@@ -1,11 +1,16 @@
-import { injectable, singleton, container } from 'tsyringe';
+import { inject, injectable, singleton } from 'tsyringe';
 import type { IDatabaseEngine } from './interfaces/IDatabaseEngine';
-import type { DatabaseInstanceStatus } from '../types/database';
+import type { DatabaseInstanceConfig, DatabaseInstanceStatus } from '../types/database';
+import { SettingsStore } from './settings-store';
 
 @injectable()
 @singleton()
 export class DatabaseRegistry {
   private readonly engines = new Map<string, IDatabaseEngine>();
+
+  constructor(
+    @inject(SettingsStore) private readonly settingsStore: SettingsStore,
+  ) {}
 
   register(engine: IDatabaseEngine): void {
     this.engines.set(engine.engine, engine);
@@ -31,6 +36,26 @@ export class DatabaseRegistry {
       }
     }
     throw new Error(`No engine found for instance ${instanceId}`);
+  }
+
+  async restoreInstances(): Promise<void> {
+    const persisted = this.settingsStore.loadInstances();
+    for (const config of persisted) {
+      const engine = this.findEngine(config.engine);
+      await engine.restoreInstance(config);
+    }
+  }
+
+  async createInstance(config: DatabaseInstanceConfig): Promise<void> {
+    const engine = this.findEngine(config.engine);
+    await engine.initialize(config);
+    this.settingsStore.saveInstance(config);
+  }
+
+  async deleteInstance(instanceId: string): Promise<void> {
+    const engine = this.resolveEngineByInstance(instanceId);
+    await engine.removeInstance(instanceId);
+    this.settingsStore.deleteInstance(instanceId);
   }
 
   async listAllInstances(): Promise<DatabaseInstanceStatus[]> {

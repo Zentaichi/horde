@@ -281,16 +281,65 @@ export class MySqlManager implements IDatabaseEngine {
     }
   }
 
-  async createDatabase(_instanceId: string, _name: string): Promise<void> {
-    throw new Error('createDatabase not yet implemented');
+  async restoreInstance(config: DatabaseInstanceConfig): Promise<void> {
+    this.instances.set(config.instanceId, {
+      config: { ...config },
+      process: null,
+    });
   }
 
-  async dropDatabase(_instanceId: string, _name: string): Promise<void> {
-    throw new Error('dropDatabase not yet implemented');
+  async createDatabase(instanceId: string, name: string): Promise<void> {
+    const entry = this.instances.get(instanceId);
+    if (!entry) throw new Error(`Instance ${instanceId} not found.`);
+    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+
+    const versionDir = join(this.installDir, entry.config.version);
+    const mysqlPath = this.resolveMySqlPath(versionDir);
+
+    await execFileAsync(mysqlPath, [
+      '-u', 'root',
+      `--port=${entry.config.port}`,
+      '--protocol=tcp',
+      '-e', `CREATE DATABASE \`${name}\`;`,
+    ]);
   }
 
-  async listDatabases(_instanceId: string): Promise<string[]> {
-    throw new Error('listDatabases not yet implemented');
+  async dropDatabase(instanceId: string, name: string): Promise<void> {
+    const entry = this.instances.get(instanceId);
+    if (!entry) throw new Error(`Instance ${instanceId} not found.`);
+    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+
+    const versionDir = join(this.installDir, entry.config.version);
+    const mysqlPath = this.resolveMySqlPath(versionDir);
+
+    await execFileAsync(mysqlPath, [
+      '-u', 'root',
+      `--port=${entry.config.port}`,
+      '--protocol=tcp',
+      '-e', `DROP DATABASE \`${name}\`;`,
+    ]);
+  }
+
+  async listDatabases(instanceId: string): Promise<string[]> {
+    const entry = this.instances.get(instanceId);
+    if (!entry) throw new Error(`Instance ${instanceId} not found.`);
+    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+
+    const versionDir = join(this.installDir, entry.config.version);
+    const mysqlPath = this.resolveMySqlPath(versionDir);
+
+    const { stdout } = await execFileAsync(mysqlPath, [
+      '-u', 'root',
+      `--port=${entry.config.port}`,
+      '--protocol=tcp',
+      '--skip-column-names',
+      '-e', 'SHOW DATABASES;',
+    ]);
+
+    return stdout
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && !['information_schema', 'mysql', 'performance_schema', 'sys'].includes(s));
   }
 
   private resolveBinDir(versionDir: string): string {
@@ -301,6 +350,10 @@ export class MySqlManager implements IDatabaseEngine {
       }
     }
     return join(versionDir, 'bin');
+  }
+
+  private resolveMySqlPath(versionDir: string): string {
+    return join(this.resolveBinDir(versionDir), 'mysql' + this.platform.getBinaryExtension());
   }
 
   private async downloadFile(

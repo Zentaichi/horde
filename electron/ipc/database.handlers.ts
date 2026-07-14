@@ -44,8 +44,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:initialize',
     async (_event, config: DatabaseInstanceConfig) => {
-      const inst = registry.findEngine(config.engine);
-      await inst.initialize(config);
+      await registry.createInstance(config);
     },
   );
 
@@ -83,8 +82,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:remove-instance',
     async (_event, instanceId: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
-      await inst.removeInstance(instanceId);
+      await registry.deleteInstance(instanceId);
     },
   );
 
@@ -104,6 +102,30 @@ export function registerDatabaseHandlers() {
       const versionDir = join(installDir, version);
       const result = await shell.openPath(versionDir);
       if (result) throw new Error(result);
+    },
+  );
+
+  ipcMain.handle(
+    'databases:create-database',
+    async (_event, instanceId: string, name: string) => {
+      const inst = registry.resolveEngineByInstance(instanceId);
+      await inst.createDatabase(instanceId, name);
+    },
+  );
+
+  ipcMain.handle(
+    'databases:drop-database',
+    async (_event, instanceId: string, name: string) => {
+      const inst = registry.resolveEngineByInstance(instanceId);
+      await inst.dropDatabase(instanceId, name);
+    },
+  );
+
+  ipcMain.handle(
+    'databases:list-databases',
+    async (_event, instanceId: string) => {
+      const inst = registry.resolveEngineByInstance(instanceId);
+      return await inst.listDatabases(instanceId);
     },
   );
 }

@@ -20,6 +20,8 @@ export interface IDatabaseEngine {
   listInstances(): Promise<DatabaseInstanceStatus[]>;
   removeInstance(instanceId: string): Promise<void>;
 
+  restoreInstance(config: DatabaseInstanceConfig): Promise<void>;
+
   createDatabase(instanceId: string, name: string): Promise<void>;
   dropDatabase(instanceId: string, name: string): Promise<void>;
   listDatabases(instanceId: string): Promise<string[]>;
