@@ -2,14 +2,14 @@
 
 **Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** MVP (Phase 1) under active development — 15/18 items complete. Windows-only for now; macOS and Linux planned for Phase 6.
+> **Status:** MVP (Phase 1) complete — 18/18 items done. Windows-only for now; macOS and Linux planned for Phase 6.
 
 ## Core MVP Features (Phase 1)
 
 - **PHP Version Manager**
   Download, list, globally switch, uninstall, and reveal PHP versions (Windows binaries from windows.php.net).
 - **MySQL Portable Server**
-  Download multiple MySQL versions, create per-instance data directories, start/stop instances on configurable ports, with simultaneous multi-instance support.
+  Download multiple MySQL versions, create per-instance data directories, start/stop instances on configurable ports, create/delete databases via UI, with simultaneous multi-instance support and persistent state across restarts.
 - **Dashboard UI**
   Real-time status cards for PHP (active version, installed count) and databases (running instances, ports), with light/dark theme toggle.
 - **Platform Abstraction**

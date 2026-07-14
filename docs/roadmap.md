@@ -16,10 +16,10 @@
 - [x] MySQL start/stop process control (spawn with SIGTERM grace + SIGKILL fallback, status polling)
 - [x] Engine-agnostic IPC contract: `databases.*` (list-engines, download, initialize, start/stop/get-status, list-instances, remove-instance, onDownloadProgress)
 - [x] Dashboard UI with real-time status (PhpStatusWidget + DatabaseStatusWidget: green/gray dots, running instance counts, direct nav links)
-- [ ] Settings persistence with SQLite
+- [x] Settings persistence with SQLite
 - [x] Light/dark theme toggle (useTheme composable + ThemeToggle button in nav bar)
-- [ ] Unit and basic E2E tests
-- [ ] GitHub Actions CI building Windows installer
+- [x] Unit and basic E2E tests
+- [x] GitHub Actions CI building Windows installer
 
 > **Cross-platform seed (do now, cheap):** `IPlatformAdapter` interface with Windows implementation only. All OS-specific paths, URLs, and extraction go through the adapter. macOS/Linux adapters are single-class files written in Phase 6 — no Phase 1 code needs to change when they arrive.
 
@@ -71,4 +71,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-13 (Package E: MySQL engine + UI — IDatabaseEngine, MySqlManager, DatabaseRegistry, databases.* IPC, DatabasePage, DatabaseStatusWidget, nav)
+> Updated last: 2026-07-14 (Phase 1 complete — Settings persistence, Create/Delete databases, Unit/E2E tests, CI/CD)

@@ -1,6 +1,6 @@
 {
   "name": "horde",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Your local PHP & DB manager",
   "main": "dist-electron/electron/main.js",
   "scripts": {
