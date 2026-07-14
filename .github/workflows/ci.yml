@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        node-version: ['22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck main process
+        run: npx tsc -p tsconfig.node.json --noEmit
+
+      - name: Typecheck renderer
+        run: npx vue-tsc --noEmit
+
+      - name: Run unit tests
+        run: npx vitest run
+
+      - name: Build installer
+        run: npm run build
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: horde-installer-${{ matrix.node-version }}
+          path: release/*.exe
+          if-no-files-found: warn
