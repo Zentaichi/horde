@@ -29,6 +29,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeInstance: (instanceId: string) => ipcRenderer.invoke('databases:remove-instance', instanceId),
     uninstall: (engine: string, version: string) => ipcRenderer.invoke('databases:uninstall', engine, version),
     openInstallDir: (engine: string, version: string) => ipcRenderer.invoke('databases:open-install-dir', engine, version),
+    createDatabase: (instanceId: string, name: string) => ipcRenderer.invoke('databases:create-database', instanceId, name),
+    dropDatabase: (instanceId: string, name: string) => ipcRenderer.invoke('databases:drop-database', instanceId, name),
+    listDatabases: (instanceId: string) => ipcRenderer.invoke('databases:list-databases', instanceId),
     onDownloadProgress: (
       engine: string,
       version: string,

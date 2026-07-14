@@ -157,6 +157,36 @@ export const useDatabaseStore = defineStore('database', () => {
     window.electronAPI.databases.openInstallDir(engine, version);
   }
 
+  async function createDatabase(instanceId: string, name: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.createDatabase(instanceId, name);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to create database';
+      throw e;
+    }
+  }
+
+  async function dropDatabase(instanceId: string, name: string) {
+    clearError();
+    try {
+      await window.electronAPI.databases.dropDatabase(instanceId, name);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to drop database';
+      throw e;
+    }
+  }
+
+  async function fetchDatabases(instanceId: string): Promise<string[]> {
+    clearError();
+    try {
+      return await window.electronAPI.databases.listDatabases(instanceId);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to list databases';
+      return [];
+    }
+  }
+
   return {
     engines,
     availableVersions,
@@ -177,6 +207,9 @@ export const useDatabaseStore = defineStore('database', () => {
     removeInstance,
     uninstallVersion,
     openVersionDir,
+    createDatabase,
+    dropDatabase,
+    fetchDatabases,
     progressKey,
   };
 });

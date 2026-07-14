@@ -38,6 +38,9 @@ declare global {
         removeInstance: (instanceId: string) => Promise<void>;
         uninstall: (engine: string, version: string) => Promise<void>;
         openInstallDir: (engine: string, version: string) => Promise<void>;
+        createDatabase: (instanceId: string, name: string) => Promise<void>;
+        dropDatabase: (instanceId: string, name: string) => Promise<void>;
+        listDatabases: (instanceId: string) => Promise<string[]>;
         onDownloadProgress: (
           engine: string,
           version: string,

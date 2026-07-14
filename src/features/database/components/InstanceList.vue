@@ -102,6 +102,65 @@
               </template>
             </div>
           </div>
+
+          <div v-if="instance.running" class="mt-3 pt-3 border-t border-border">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Databases</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 text-xs"
+                @click="toggleDbPanel(instance.instanceId)"
+              >
+                <Database :class="expandedDb === instance.instanceId ? 'size-3.5 mr-1' : 'size-3.5 mr-1 rotate-0'" class="size-3.5 mr-1" />
+                {{ expandedDb === instance.instanceId ? 'Hide' : 'Manage' }}
+              </Button>
+            </div>
+
+            <template v-if="expandedDb === instance.instanceId">
+              <!-- Database List -->
+              <div v-if="databases[instance.instanceId]?.length" class="space-y-1 mb-3">
+                <div
+                  v-for="db in databases[instance.instanceId]"
+                  :key="db"
+                  class="flex items-center justify-between py-1 px-2 rounded hover:bg-muted/50 text-sm"
+                >
+                  <span class="truncate">{{ db }}</span>
+                  <button
+                    class="text-muted-foreground hover:text-destructive shrink-0 ml-2"
+                    :disabled="droppingDb === db"
+                    @click="onDropDatabase(instance.instanceId, db)"
+                  >
+                    <Trash2 v-if="droppingDb !== db" class="size-3.5" />
+                    <Loader v-else class="size-3.5 animate-spin" />
+                  </button>
+                </div>
+              </div>
+              <p v-if="dbLoading[instance.instanceId]" class="text-xs text-muted-foreground py-2">Loading...</p>
+              <p v-else-if="!databases[instance.instanceId]?.length" class="text-xs text-muted-foreground py-2">No user databases.</p>
+
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="newDbName"
+                  type="text"
+                  placeholder="Database name..."
+                  class="flex-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs"
+                  @keyup.enter="onCreateDatabase(instance.instanceId)"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 text-xs shrink-0"
+                  :disabled="!newDbName.trim() || creatingDb === instance.instanceId"
+                  @click="onCreateDatabase(instance.instanceId)"
+                >
+                  <Plus v-if="creatingDb !== instance.instanceId" class="size-3 mr-1" />
+                  <Loader v-else class="size-3 mr-1 animate-spin" />
+                  Create
+                </Button>
+              </div>
+            </template>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -113,12 +172,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useDatabaseStore } from '../stores/databaseStore';
 import { storeToRefs } from 'pinia';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { Circle } from '@lucide/vue';
+import { Circle, Database, Loader, Plus, Trash2 } from '@lucide/vue';
 
 defineProps<{
   engine: string;
@@ -131,6 +190,61 @@ const showCreateForm = ref(false);
 const createVersion = ref('');
 const createPort = ref(3306);
 const confirmingDelete = ref<string | null>(null);
+
+const expandedDb = ref<string | null>(null);
+const databases = reactive<Record<string, string[]>>({});
+const dbLoading = reactive<Record<string, boolean>>({});
+const newDbName = ref('');
+const creatingDb = ref<string | null>(null);
+const droppingDb = ref<string | null>(null);
+
+watch(instances, () => {
+  databases;
+}, { deep: true });
+
+async function loadDatabases(instanceId: string) {
+  dbLoading[instanceId] = true;
+  databases[instanceId] = await store.fetchDatabases(instanceId);
+  dbLoading[instanceId] = false;
+}
+
+function toggleDbPanel(instanceId: string) {
+  if (expandedDb.value === instanceId) {
+    expandedDb.value = null;
+  } else {
+    expandedDb.value = instanceId;
+    if (!databases[instanceId]) {
+      loadDatabases(instanceId);
+    }
+  }
+}
+
+async function onCreateDatabase(instanceId: string) {
+  const name = newDbName.value.trim();
+  if (!name) return;
+  creatingDb.value = instanceId;
+  try {
+    await store.createDatabase(instanceId, name);
+    newDbName.value = '';
+    await loadDatabases(instanceId);
+  } catch {
+    // Error handled by store
+  } finally {
+    creatingDb.value = null;
+  }
+}
+
+async function onDropDatabase(instanceId: string, db: string) {
+  droppingDb.value = db;
+  try {
+    await store.dropDatabase(instanceId, db);
+    await loadDatabases(instanceId);
+  } catch {
+    // Error handled by store
+  } finally {
+    droppingDb.value = null;
+  }
+}
 
 const nextPort = computed(() => {
   const usedPorts = new Set(instances.value.map((i) => i.port));
