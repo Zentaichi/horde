@@ -83,4 +83,25 @@ export class Win32PlatformAdapter implements IPlatformAdapter {
   getAutoStartDir(): string {
     return join(app.getPath('userData'), '..', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
   }
+
+  resolveExtensionFileName(extensionName: string): string {
+    return `php_${extensionName}.dll`;
+  }
+
+  async createAutoStartEntry(name: string, targetPath: string, args: string[] = []): Promise<void> {
+    const shortcutPath = join(this.getAutoStartDir(), `${name}.lnk`);
+    const argStr = args.join(' ');
+    await execFileAsync('powershell', [
+      '-Command',
+      `$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut('${shortcutPath}'); $sc.TargetPath = '${targetPath}'; $sc.Arguments = '${argStr}'; $sc.Save()`,
+    ]);
+  }
+
+  async removeAutoStartEntry(name: string): Promise<void> {
+    const shortcutPath = join(this.getAutoStartDir(), `${name}.lnk`);
+    await execFileAsync('powershell', [
+      '-Command',
+      `Remove-Item '${shortcutPath}' -Force -ErrorAction SilentlyContinue`,
+    ]);
+  }
 }

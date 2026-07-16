@@ -7,6 +7,7 @@ import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
 import type { IPhpManager } from './interfaces/IPhpManager';
 import type { PhpVersion, DownloadProgress } from '../types/php';
 import { downloadFile } from '../utils/download';
+import { SettingsStore } from './settings-store';
 
 interface PhpRelease {
   version: string;
@@ -20,6 +21,7 @@ export class PhpManager implements IPhpManager {
 
   constructor(
     @inject('IPlatformAdapter') private readonly platform: IPlatformAdapter,
+    @inject(SettingsStore) private readonly settingsStore: SettingsStore,
   ) {
     this.basePath = this.platform.getDefaultRuntimeInstallDir('php');
     if (!existsSync(this.basePath)) {
@@ -75,15 +77,18 @@ export class PhpManager implements IPhpManager {
   }
 
   getActiveVersion(): string | null {
-    const entries = (process.env.PATH || '').split(';');
-    for (const entry of entries) {
-      if (entry.startsWith(this.basePath)) {
-        const relative = entry.slice(this.basePath.length).replace(/^[\\/]+/, '');
-        const version = relative.split(/[\\/]/)[0];
-        if (version) return version;
-      }
+    const cached = this.settingsStore.get('active_php_version');
+    if (cached && existsSync(join(this.basePath, cached))) {
+      return cached;
     }
-    return null;
+
+    const version = this.findActiveInPath();
+    if (version) {
+      this.settingsStore.set('active_php_version', version);
+    } else if (cached) {
+      this.settingsStore.set('active_php_version', '');
+    }
+    return version;
   }
 
   async switchGlobal(version: string): Promise<void> {
@@ -97,6 +102,7 @@ export class PhpManager implements IPhpManager {
     cleaned.unshift(versionPath);
 
     await this.platform.writePathEntries(cleaned);
+    this.settingsStore.set('active_php_version', version);
   }
 
   async uninstallVersion(version: string): Promise<void> {
@@ -110,6 +116,7 @@ export class PhpManager implements IPhpManager {
       const entries = await this.platform.getPathEntries();
       const cleaned = this.filterHordeEntries(entries);
       await this.platform.writePathEntries(cleaned);
+      this.settingsStore.set('active_php_version', '');
     }
 
     await remove(versionPath);
@@ -169,5 +176,17 @@ export class PhpManager implements IPhpManager {
 
   private filterHordeEntries(entries: string[]): string[] {
     return entries.filter((entry) => !entry.startsWith(this.basePath));
+  }
+
+  private findActiveInPath(): string | null {
+    const entries = (process.env.PATH || '').split(';');
+    for (const entry of entries) {
+      if (entry.startsWith(this.basePath)) {
+        const relative = entry.slice(this.basePath.length).replace(/^[\\/]+/, '');
+        const version = relative.split(/[\\/]/)[0];
+        if (version) return version;
+      }
+    }
+    return null;
   }
 }

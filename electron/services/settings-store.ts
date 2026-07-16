@@ -4,6 +4,7 @@ import { join } from 'path';
 import { ensureDir } from 'fs-extra';
 import { injectable, singleton } from 'tsyringe';
 import type { DatabaseInstanceConfig } from '../types/database';
+import type { Project } from '../types/project';
 
 @injectable()
 @singleton()
@@ -33,6 +34,14 @@ export class SettingsStore {
         port        INTEGER NOT NULL,
         datadir     TEXT NOT NULL,
         label       TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS projects (
+        id          TEXT PRIMARY KEY,
+        name        TEXT NOT NULL,
+        path        TEXT NOT NULL UNIQUE,
+        php_version TEXT,
         created_at  TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
@@ -82,6 +91,33 @@ export class SettingsStore {
       port: r.port,
       datadir: r.datadir,
       label: r.label ?? undefined,
+    }));
+  }
+
+  saveProject(project: Project): void {
+    this.db.prepare(`
+      INSERT OR REPLACE INTO projects (id, name, path, php_version)
+      VALUES (?, ?, ?, ?)
+    `).run(project.id, project.name, project.path, project.phpVersion || null);
+  }
+
+  deleteProject(id: string): void {
+    this.db.prepare('DELETE FROM projects WHERE id = ?').run(id);
+  }
+
+  loadProjects(): Project[] {
+    const rows = this.db.prepare('SELECT * FROM projects').all() as Array<{
+      id: string;
+      name: string;
+      path: string;
+      php_version: string | null;
+    }>;
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      path: r.path,
+      phpVersion: r.php_version ?? undefined,
     }));
   }
 

@@ -13,6 +13,7 @@ import { DatabaseRegistry } from './services/database-registry';
 import { SettingsStore } from './services/settings-store';
 import { registerPhpHandlers } from './ipc/php.handlers';
 import { registerDatabaseHandlers } from './ipc/database.handlers';
+import { registerSettingsHandlers } from './ipc/settings.handlers';
 
 container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
 container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
@@ -51,6 +52,7 @@ app.whenReady().then(async () => {
   log.info('Horde starting up');
 
   registerPhpHandlers();
+  registerSettingsHandlers();
 
   const mysqlManager = container.resolve<IDatabaseEngine>('IDatabaseEngine:mysql');
   const databaseRegistry = container.resolve(DatabaseRegistry);

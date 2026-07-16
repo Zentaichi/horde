@@ -47,6 +47,10 @@ declare global {
           callback: (progress: DbDownloadProgress) => void,
         ) => () => void;
       };
+      settings: {
+        get: (key: string) => Promise<string | null>;
+        set: (key: string, value: string) => Promise<void>;
+      };
       openDirectory: (path: string) => Promise<void>;
     };
   }

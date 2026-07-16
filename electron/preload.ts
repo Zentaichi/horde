@@ -43,5 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener(channel, listener);
     },
   },
+  settings: {
+    get: (key: string) => ipcRenderer.invoke('settings:get', key),
+    set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
+  },
   openDirectory: (path: string) => ipcRenderer.invoke('app:open-directory', path),
 });

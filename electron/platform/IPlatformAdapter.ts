@@ -19,4 +19,8 @@ export interface IPlatformAdapter {
 
   getHostsFilePath(): string;
   getAutoStartDir(): string;
+
+  resolveExtensionFileName(extensionName: string): string;
+  createAutoStartEntry(name: string, targetPath: string, args?: string[]): Promise<void>;
+  removeAutoStartEntry(name: string): Promise<void>;
 }
