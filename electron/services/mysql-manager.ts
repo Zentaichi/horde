@@ -1,7 +1,5 @@
 import { join } from 'path';
-import { existsSync, readdirSync, mkdirSync, createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { Readable } from 'stream';
+import { existsSync, readdirSync, mkdirSync } from 'fs';
 import { execFile, spawn, type ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import { ensureDir, remove } from 'fs-extra';
@@ -11,6 +9,7 @@ import { inject, injectable } from 'tsyringe';
 import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
 import type { IDatabaseEngine, ProgressCallback } from './interfaces/IDatabaseEngine';
 import type { DatabaseInstanceConfig, DatabaseInstanceStatus } from '../types/database';
+import { downloadFile } from '../utils/download';
 
 const execFileAsync = promisify(execFile);
 
@@ -81,7 +80,7 @@ export class MySqlManager implements IDatabaseEngine {
 
     await ensureDir(tempDir);
 
-    await this.downloadFile(url, zipPath, onProgress);
+    await downloadFile(url, zipPath, onProgress);
 
     await ensureDir(versionDir);
 
@@ -354,35 +353,5 @@ export class MySqlManager implements IDatabaseEngine {
 
   private resolveMySqlPath(versionDir: string): string {
     return join(this.resolveBinDir(versionDir), 'mysql' + this.platform.getBinaryExtension());
-  }
-
-  private async downloadFile(
-    url: string,
-    destPath: string,
-    onProgress?: ProgressCallback,
-  ): Promise<void> {
-    const response = await fetch(url);
-    if (!response.ok || !response.body) {
-      throw new Error(`Download failed: ${response.statusText}`);
-    }
-
-    const totalBytes = Number(response.headers.get('content-length')) || 0;
-    let transferredBytes = 0;
-
-    const writer = createWriteStream(destPath);
-    const nodeReadable = Readable.fromWeb(response.body as any);
-
-    if (onProgress && totalBytes > 0) {
-      nodeReadable.on('data', (chunk: Buffer) => {
-        transferredBytes += chunk.length;
-        onProgress({
-          percent: Math.round((transferredBytes / totalBytes) * 100),
-          transferredBytes,
-          totalBytes,
-        });
-      });
-    }
-
-    await pipeline(nodeReadable, writer);
   }
 }

@@ -38,25 +38,43 @@ electron/               # Main process
   main.ts               # Entry point, DI container setup, window creation
   preload.ts            # contextBridge exposure
   platform/             # OS-specific implementations
-    IPlatformAdapter.ts # Platform abstraction interface (13 methods)
+    IPlatformAdapter.ts # Platform abstraction interface (15 methods)
     win32/
       Win32PlatformAdapter.ts
   services/
     interfaces/
       IPhpManager.ts
       IDatabaseEngine.ts
+      IProjectManager.ts
+      IDevServerManager.ts
+      IExtensionManager.ts
+      IServiceRegistry.ts
     php-manager.ts      # Implements IPhpManager
     mysql-manager.ts    # Implements IDatabaseEngine
-    database-registry.ts # Multi-engine instance tracker
+    project-manager.ts  # Implements IProjectManager
+    dev-server-manager.ts # Implements IDevServerManager + IServiceProvider
+    extension-manager.ts  # Implements IExtensionManager
+    database-registry.ts  # Multi-engine instance tracker + IServiceProvider
+    service-registry.ts   # Aggregated service status for tray/auto-start
+    settings-store.ts     # SQLite persistence (settings, instances, projects)
   ipc/
     php.handlers.ts
     database.handlers.ts
+    project.handlers.ts
+    devserver.handlers.ts
+    extensions.handlers.ts
+    settings.handlers.ts
   types/
     php.ts              # PhpVersion, DownloadProgress
     database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
+    project.ts          # Project
+    devserver.ts        # DevServerStatus
+    extension.ts        # ExtensionInfo
+  utils/
+    download.ts         # Shared download utility (single source)
 
 src/                    # Renderer process
-  app/                  # Global setup, router
+  app/                  # Global setup, router, App shell
     App.vue             # App shell with nav bar
     router.ts           # Route definitions
     main.ts             # App entry, Pinia setup
@@ -64,6 +82,7 @@ src/                    # Renderer process
     DashboardPage.vue
     PhpManagerPage.vue
     DatabasePage.vue
+    ProjectsPage.vue
   features/
     php/                # PHP feature module
       stores/           # Pinia store
@@ -71,9 +90,20 @@ src/                    # Renderer process
     database/           # Database feature module (engine-agnostic)
       stores/
       components/
+    projects/           # Project management feature module
+      stores/
+      components/
+    devserver/          # Dev server feature module
+      stores/
+      components/
+    extensions/         # Extension manager feature module
+      stores/
+      components/
   widgets/              # Composition of multiple features
     PhpStatusWidget.vue
     DatabaseStatusWidget.vue
+    ProjectStatusWidget.vue
+    DevServerStatusWidget.vue
   shared/               # Reusable UI kit, types, composables
     ui/                 # shadcn-vue components
     types/              # Shared type definitions
@@ -92,8 +122,13 @@ Main process services implement shared interfaces (`IPhpManager`, `IDatabaseEngi
 |---------|-----------|-----------------|
 | `PhpManager` | `IPhpManager` | PHP version list/download/switch/uninstall, PATH manipulation |
 | `MySqlManager` | `IDatabaseEngine` | MySQL download/extract, instance initialize, start/stop process control, instance status |
-| `DatabaseRegistry` | (concrete, singleton) | Multi-engine instance tracking, engine resolution by instanceId |
-| `Win32PlatformAdapter` | `IPlatformAdapter` | OS-specific: PATH (reg query/setx), ZIP extraction (PowerShell), download URLs, binary extension, install directories |
+| `DatabaseRegistry` | (concrete, singleton) + `IServiceProvider` | Multi-engine instance tracking, engine resolution by instanceId, implements `IServiceProvider` for tray/auto-start visibility |
+| `ServiceRegistry` | (concrete, singleton) | Aggregates status from all `IServiceProvider` instances. Used by tray and auto-start. Orphan process reattach on startup. |
+| `ProjectManager` | `IProjectManager` | Project CRUD, `.php-version` scanning (read-only), project persistence |
+| `DevServerManager` | `IDevServerManager` + `IServiceProvider` | Dev server process lifecycle (`php -S`), log capture, port management. Registers with `ServiceRegistry`. |
+| `ExtensionManager` | `IExtensionManager` | List bundled extensions, enable/disable via `php.ini` modification. Bundled only (no PECL). |
+| `SettingsStore` | (concrete, singleton) | SQLite persistence: settings KV, instances, projects. Exposed to renderer via `settings:*` IPC. |
+| `Win32PlatformAdapter` | `IPlatformAdapter` | OS-specific: PATH (reg query/setx), ZIP extraction (PowerShell), download URLs, binary extension, install directories, extension file names, auto-start shortcuts |
 
 All OS-coupled operations flow through `IPlatformAdapter` so that services never branch on `process.platform`. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
 
@@ -143,7 +178,39 @@ interface ElectronAPI {
     removeInstance(instanceId: string): Promise<void>;
     uninstall(engine: string, version: string): Promise<void>;
     openInstallDir(engine: string, version: string): Promise<void>;
+    createDatabase(instanceId: string, name: string): Promise<void>;
+    dropDatabase(instanceId: string, name: string): Promise<void>;
+    listDatabases(instanceId: string): Promise<string[]>;
     onDownloadProgress(engine: string, version: string, callback: (p: DownloadProgress) => void): () => void;
+  };
+
+  projects: {
+    list(): Promise<Project[]>;
+    add(name: string, path: string): Promise<Project>;
+    remove(projectId: string): Promise<void>;
+    scanPhpVersion(projectId: string): Promise<string | null>;
+    scanAll(): Promise<void>;
+    openDir(projectId: string): Promise<void>;
+  };
+
+  devserver: {
+    start(projectId: string, port?: number): Promise<DevServerStatus>;
+    stop(projectId: string): Promise<void>;
+    getStatus(projectId: string): Promise<DevServerStatus | null>;
+    listAll(): Promise<DevServerStatus[]>;
+    getLogs(projectId: string, tail?: number): Promise<string[]>;
+    onLog(projectId: string, callback: (line: string) => void): () => void;
+  };
+
+  extensions: {
+    list(phpVersion: string): Promise<ExtensionInfo[]>;
+    enable(phpVersion: string, extensionName: string): Promise<void>;
+    disable(phpVersion: string, extensionName: string): Promise<void>;
+  };
+
+  settings: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<void>;
   };
 
   openDirectory(path: string): Promise<void>;
@@ -152,9 +219,13 @@ interface ElectronAPI {
 
 Key design decisions:
 - `databases.*` is engine-agnostic — the renderer never imports `mysql` or `postgres` specifically. New engines are additive.
+- `projects.*` uses discovery-only `.php-version` scanning (read from disk, never write). See [ADR-0006](adr/0006-project-management-scope-boundary.md).
+- `devserver.*` references projects by ID but lives in its own IPC namespace and FSD module. Services register with `ServiceRegistry` for tray visibility. See [ADR-0007](adr/0007-service-registry-abstraction.md).
+- `extensions.*` is limited to bundled extensions only (no PECL). See [ADR-0009](adr/0009-extension-manager-scope-boundary.md).
+- `settings.*` provides a generic key-value persistence channel to the renderer. See [ADR-0008](adr/0008-settings-store-consolidation.md).
 - Every database channel uses `instanceId` rather than relying on a singleton. This supports multiple simultaneous instances from day one.
-- `onDownloadProgress()` returns an unsubscribe function to prevent listener leaks.
-- Progress push channels follow the pattern `php:download-progress-{version}` and `database:download-progress-{engine}-{version}`.
+- `onDownloadProgress()` and `onLog()` return an unsubscribe function to prevent listener leaks.
+- Progress push channels follow the pattern `php:download-progress-{version}`, `database:download-progress-{engine}-{version}`, and `devserver:log-{projectId}`.
 
 ## Data Flow
 
@@ -180,5 +251,10 @@ We use `electron-builder` with NSIS for Windows. The installer bundles all Node.
 - [ADR-0002](adr/0002-service-layer-di-strategy.md) — DI & service boundaries
 - [ADR-0003](adr/0003-multi-engine-database-abstraction.md) — Engine-agnostic IPC
 - [ADR-0004](adr/0004-platform-abstraction-boundary.md) — Platform abstraction
+- [ADR-0005](adr/0005-download-utility-consolidation.md) — Download utility consolidation
+- [ADR-0006](adr/0006-project-management-scope-boundary.md) — Project scope boundary & dev server integration
+- [ADR-0007](adr/0007-service-registry-abstraction.md) — ServiceRegistry & unified process status
+- [ADR-0008](adr/0008-settings-store-consolidation.md) — SettingsStore canonical persistence
+- [ADR-0009](adr/0009-extension-manager-scope-boundary.md) — Extension manager scope (bundled only)
 - [Requirements](requirements.md)
 - [Roadmap](roadmap.md)

@@ -1,13 +1,12 @@
 import { join } from 'path';
-import { existsSync, readdirSync, mkdirSync, createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { Readable } from 'stream';
+import { existsSync, readdirSync, mkdirSync } from 'fs';
 import { ensureDir, remove } from 'fs-extra';
 import { tmpdir } from 'os';
 import { inject, injectable } from 'tsyringe';
 import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
 import type { IPhpManager } from './interfaces/IPhpManager';
 import type { PhpVersion, DownloadProgress } from '../types/php';
+import { downloadFile } from '../utils/download';
 
 interface PhpRelease {
   version: string;
@@ -66,7 +65,7 @@ export class PhpManager implements IPhpManager {
 
     await ensureDir(tempDir);
 
-    await this.downloadFile(zipUrl, zipPath, onProgress);
+    await downloadFile(zipUrl, zipPath, onProgress);
 
     try {
       await this.platform.extractZip(zipPath, extractPath);
@@ -169,38 +168,6 @@ export class PhpManager implements IPhpManager {
   }
 
   private filterHordeEntries(entries: string[]): string[] {
-    return entries.filter(
-      (entry) => !entry.includes('Horde\\php') && !entry.includes('Horde/php'),
-    );
-  }
-
-  private async downloadFile(
-    url: string,
-    destPath: string,
-    onProgress?: (info: DownloadProgress) => void,
-  ): Promise<void> {
-    const response = await fetch(url);
-    if (!response.ok || !response.body) {
-      throw new Error(`Download failed: ${response.statusText}`);
-    }
-
-    const totalBytes = Number(response.headers.get('content-length')) || 0;
-    let transferredBytes = 0;
-
-    const writer = createWriteStream(destPath);
-    const nodeReadable = Readable.fromWeb(response.body as any);
-
-    if (onProgress && totalBytes > 0) {
-      nodeReadable.on('data', (chunk: Buffer) => {
-        transferredBytes += chunk.length;
-        onProgress({
-          percent: Math.round((transferredBytes / totalBytes) * 100),
-          transferredBytes,
-          totalBytes,
-        });
-      });
-    }
-
-    await pipeline(nodeReadable, writer);
+    return entries.filter((entry) => !entry.startsWith(this.basePath));
   }
 }

@@ -110,11 +110,14 @@ export class Win32PlatformAdapter implements IPlatformAdapter {
 - Adding a method to the interface requires adding a stub to every existing adapter. With 3 total adapters (win32, darwin, linux), this is minimal overhead.
 
 **Follow-up:**
-- Define `IPlatformAdapter` interface immediately.
-- Implement `Win32PlatformAdapter` for MVP.
-- Refactor `PhpManager` to receive `IPlatformAdapter` via constructor.
+- Define `IPlatformAdapter` interface immediately. (Done — Phase 1)
+- Implement `Win32PlatformAdapter` for MVP. (Done — Phase 1)
+- Refactor `PhpManager` to receive `IPlatformAdapter` via constructor. (Done — Phase 1)
 - Defer `DarwinPlatformAdapter` and `LinuxPlatformAdapter` to Phase 6.
-- Defer `getHostsFilePath()` and `getAutoStartDir()` implementations until their respective phases.
+- Defer `getHostsFilePath()` until Phase 4.
+- **Phase 2 additions** (per [ADR-0009](../adr/0009-extension-manager-scope-boundary.md)): Add `resolveExtensionFileName(name: string): string` for extension DLL/SO name resolution.
+- **Phase 2 additions** (auto-start feature): Add `createAutoStartEntry(name: string, targetPath: string, args?: string[]): Promise<void>` and `removeAutoStartEntry(name: string): Promise<void>` for OS-specific boot registration.
+- `getAutoStartDir()` already implemented on Win32; `createAutoStartEntry`/`removeAutoStartEntry` wrap the actual shortcut/plist/desktop-file creation around that path.
 
 ## Alternatives Considered
 

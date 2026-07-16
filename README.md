@@ -85,6 +85,11 @@ Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
 | [ADR-0002](docs/adr/0002-service-layer-di-strategy.md) | Service layer & tsyringe DI |
 | [ADR-0003](docs/adr/0003-multi-engine-database-abstraction.md) | Engine-agnostic database IPC |
 | [ADR-0004](docs/adr/0004-platform-abstraction-boundary.md) | Platform abstraction (IPlatformAdapter) |
+| [ADR-0005](docs/adr/0005-download-utility-consolidation.md) | Single canonical download utility |
+| [ADR-0006](docs/adr/0006-project-management-scope-boundary.md) | Project model scope boundary & dev server integration |
+| [ADR-0007](docs/adr/0007-service-registry-abstraction.md) | Unified process status via ServiceRegistry |
+| [ADR-0008](docs/adr/0008-settings-store-consolidation.md) | SettingsStore as canonical persistence layer |
+| [ADR-0009](docs/adr/0009-extension-manager-scope-boundary.md) | Extension manager (bundled only, no PECL) |
 
 Full architecture: [docs/architecture.md](docs/architecture.md)
 

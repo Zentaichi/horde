@@ -25,13 +25,33 @@
 
 ## Phase 2 — Polish & Developer UX
 
-- [ ] Per-project PHP version with `.php-version`
-- [ ] Extension manager UI
-- [ ] `php.ini` editor
-- [ ] Built-in development server (with logs)
-- [ ] System tray with quick actions & service status indicators
-- [ ] Auto-start services on Windows boot
-- [ ] E2E test coverage for PHP + MySQL workflows
+### Pre-Phase-2 Refactors (Implementation Order — Run First)
+
+These refactors address architectural risks identified during Phase 1 review. Each enables one or more Phase 2 features and prevents code duplication, scope creep, and cross-feature coupling.
+
+| Step | Priority | Refactor | Enables | ADR |
+|------|----------|----------|---------|-----|
+| 0.1 | P0 | Consolidate `downloadFile()` into one shared utility | All download features (extensions, dev server) | [ADR-0005](adr/0005-download-utility-consolidation.md) |
+| 0.2 | P2 | Fix `filterHordeEntries` to use `this.basePath` instead of hardcoded strings | Correctness for all PATH operations | — |
+| 0.3 | P2 | Delete stale artifacts (`src/shared/types/php.js`, `.js.map`) | Cleanliness | — |
+| 0.4 | P2 | Install `eslint-plugin-boundaries` + FSD import rules | Prevents cross-feature imports in new modules | [ADR-0001](adr/0001-feature-sliced-design.md) (follow-up) |
+| 1.1 | P1 | Add `resolveExtensionFileName()` to `IPlatformAdapter` | Extension manager | [ADR-0009](adr/0009-extension-manager-scope-boundary.md) |
+| 1.2 | P1 | Add `createAutoStartEntry()` / `removeAutoStartEntry()` to `IPlatformAdapter` | Auto-start on boot | — |
+| 2.1 | P1 | Add `settings:*` IPC channels (`get`/`set`) | All persistent preferences | [ADR-0008](adr/0008-settings-store-consolidation.md) |
+| 2.2 | P1 | Add `projects` table to `SettingsStore` | Project persistence | [ADR-0006](adr/0006-project-management-scope-boundary.md), [ADR-0008](adr/0008-settings-store-consolidation.md) |
+| 2.3 | P1 | Cache active PHP version in `settings` KV | Dashboard perf; dev server PHP resolution | [ADR-0008](adr/0008-settings-store-consolidation.md) |
+| 3.1 | P0 | `IServiceProvider` interface + `ServiceRegistry` aggregator | Tray + auto-start unified service view | [ADR-0007](adr/0007-service-registry-abstraction.md) |
+| 3.2 | P0 | `DatabaseRegistry` implements `IServiceProvider` | MySQL instances visible to tray | [ADR-0007](adr/0007-service-registry-abstraction.md) |
+
+### Phase 2 Features (Dependency-Ordered)
+
+- [ ] **4.1** `ProjectManager` + `projects:*` IPC — per-project PHP via `.php-version` (**discovery-only:** reads existing files, does not write). Scope: named directory path + scanned PHP version. See [ADR-0006](adr/0006-project-management-scope-boundary.md).
+- [ ] **4.2** `DevServerManager` + `devserver:*` IPC — built-in `php -S` server (with logs). Integrates with projects for docroot + PHP version. Registers as `IServiceProvider` for tray visibility. See [ADR-0006](adr/0006-project-management-scope-boundary.md), [ADR-0007](adr/0007-service-registry-abstraction.md).
+- [ ] **4.3** `ExtensionManager` + `extensions:*` IPC — **bundled extensions only.** List + toggle enable/disable. No PECL downloads, no compilation. See [ADR-0009](adr/0009-extension-manager-scope-boundary.md).
+- [ ] **5.1** Renderer UI — `ProjectsPage`, `ProjectStatusWidget`, `DevServerStatusWidget`, `ExtensionList`
+- [ ] **6.1** System tray with quick actions & service status indicators (queries `ServiceRegistry`)
+- [ ] **6.2** Auto-start services on Windows boot (reads `auto_start_services` from settings; uses `IPlatformAdapter.createAutoStartEntry`)
+- [ ] **7.1** E2E test coverage for PHP + MySQL + dev server workflows
 
 ## Phase 3 — Full Database Suite
 
@@ -71,4 +91,4 @@
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-14 (Phase 1 complete — Settings persistence, Create/Delete databases, Unit/E2E tests, CI/CD)
+> Updated last: 2026-07-16 (Phase 1 complete — Phase 2 scope planned with ADRs 0005–0009, Pre-Phase-2 refactor dependency order established)

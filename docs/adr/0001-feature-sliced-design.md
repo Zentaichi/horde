@@ -44,8 +44,8 @@ Each feature module is self-contained with its own API wrappers (calling `window
 - E2E tests necessarily span multiple layers.
 
 **Follow-up:**
-- Enforce import rules via ESLint boundaries plugin in Phase 2.
-- Audit `features/php/` and `features/mysql/` to ensure no cross-feature imports exist.
+- **Phase 2:** Enforce import rules via `eslint-plugin-boundaries`. Configured as a pre-implementation step (Step 0.4 in the Phase 2 execution plan), before any new feature modules are created, to prevent cross-feature imports from accumulating.
+- Audit `features/php/` and `features/database/` to ensure no cross-feature imports exist.
 
 ## Alternatives Considered
 
