@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import { join } from 'path';
-import { ensureDir } from 'fs-extra';
+import { ensureDirSync } from 'fs-extra';
 import { injectable, singleton } from 'tsyringe';
 import type { DatabaseInstanceConfig } from '../types/database';
 import type { Project } from '../types/project';
@@ -13,7 +13,7 @@ export class SettingsStore {
 
   constructor() {
     const dbDir = join(app.getPath('userData'), 'data');
-    ensureDir(dbDir);
+    ensureDirSync(dbDir);
     const dbPath = join(dbDir, 'horde.db');
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');

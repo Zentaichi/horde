@@ -27,6 +27,7 @@ vi.mock('better-sqlite3', () => {
 
 vi.mock('fs-extra', () => ({
   ensureDir: vi.fn(),
+  ensureDirSync: vi.fn(),
 }));
 
 function createMockEngine(name: string): IDatabaseEngine {

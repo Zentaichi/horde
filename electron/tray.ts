@@ -1,4 +1,4 @@
-import { Tray, Menu, nativeImage, type BrowserWindow } from 'electron';
+import { Tray, Menu, app, nativeImage, type BrowserWindow } from 'electron';
 import { container } from 'tsyringe';
 import { ServiceRegistry } from './services/service-registry';
 
@@ -55,10 +55,11 @@ async function buildContextMenu(win: BrowserWindow): Promise<Menu> {
 
   template.push({
     label: 'Quit',
-    click: () => {
-      win.destroy();
-      tray = null;
-    },
+      click: () => {
+        win.destroy();
+        tray = null;
+        app.quit();
+      },
   });
 
   return Menu.buildFromTemplate(template);

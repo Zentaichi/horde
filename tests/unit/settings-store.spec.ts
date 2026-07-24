@@ -28,6 +28,7 @@ vi.mock('better-sqlite3', () => ({
 
 vi.mock('fs-extra', () => ({
   ensureDir: vi.fn(),
+  ensureDirSync: vi.fn(),
 }));
 
 import { SettingsStore } from '../../electron/services/settings-store';
