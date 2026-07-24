@@ -2,30 +2,39 @@
 
 **Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** MVP (Phase 1) complete — 18/18 items done. Windows-only for now; macOS and Linux planned for Phase 6.
+> **Status:** Phase 2 complete — Windows-only; macOS and Linux planned for Phase 6.
 
-## Core MVP Features (Phase 1)
+## Features
 
-- **PHP Version Manager**
-  Download, list, globally switch, uninstall, and reveal PHP versions (Windows binaries from windows.php.net).
-- **MySQL Portable Server**
-  Download multiple MySQL versions, create per-instance data directories, start/stop instances on configurable ports, create/delete databases via UI, with simultaneous multi-instance support and persistent state across restarts.
-- **Dashboard UI**
-  Real-time status cards for PHP (active version, installed count) and databases (running instances, ports), with light/dark theme toggle.
-- **Platform Abstraction**
-  All OS-specific logic (PATH, ZIP extraction, binary URLs) routed through `IPlatformAdapter` — adding macOS/Linux requires writing one class per platform, zero service code changes.
+### PHP Management
+- Download, list, globally switch, uninstall PHP versions (Windows binaries)
+- Per-project PHP version via `.php-version` file (read-only discovery)
+- Extension manager UI (list and toggle bundled extensions)
+- `php.ini` editing for extension toggles
 
-## Planned (Post-MVP)
+### Database Management
+- Download portable MySQL versions, create per-instance data directories
+- Start/stop/restart MySQL instances on configurable ports
+- Create/delete databases via UI
+- Multiple simultaneous instances across different versions/ports
 
-- Per-project PHP version via `.php-version` file
-- PHP extension manager & `php.ini` editor
-- Built-in development server with logs
-- System tray with quick actions & service status
-- Auto-start services on boot
-- Settings persistence with SQLite
+### Dev Server
+- Built-in `php -S` development server per project
+- Real-time log streaming
+
+### Platform & Developer Experience
+- Dashboard with status cards (PHP, Databases, Projects, Dev Servers)
+- System tray with service status indicators and quick actions
+- Auto-start services on Windows boot
+- Light/dark theme toggle
+- Settings persistence via SQLite
+- `IPlatformAdapter` abstraction — macOS/Linux is one class per platform
+
+## Planned (Phase 3+)
+
 - PostgreSQL and MariaDB engine support
 - Database import/export (SQL dump)
-- Create / Delete databases via UI
+- Full `php.ini` text editor
 - Built-in HTTPS via `mkcert` + Caddy reverse proxy
 - Local domain mapping & hosts file integration
 - CLI companion tool (`horde` command)
@@ -50,30 +59,51 @@ The codebase follows **Feature Sliced Design** (frontend) with a **service layer
 electron/               # Main process
   main.ts               # Entry point, DI container, window creation
   preload.ts            # contextBridge (typed IPC)
+  tray.ts               # System tray icon and context menu
   platform/             # OS-specific adapters
-    IPlatformAdapter.ts # Platform abstraction interface (13 methods)
+    IPlatformAdapter.ts # Platform abstraction interface (15 methods)
     win32/              # Windows implementation (PowerShell, reg query, setx)
   services/
     interfaces/         # Shared contracts
       IPhpManager.ts    # PHP service contract
       IDatabaseEngine.ts # Multi-engine database contract (18 methods)
+      IProjectManager.ts # Project CRUD + .php-version scanning
+      IDevServerManager.ts # Built-in dev server lifecycle
+      IExtensionManager.ts # Bundled extension listing and toggling
+      IServiceRegistry.ts  # Unified service status for tray/auto-start
     php-manager.ts      # Implements IPhpManager
     mysql-manager.ts    # Implements IDatabaseEngine
-    database-registry.ts # Multi-engine instance tracker
+    project-manager.ts  # Implements IProjectManager
+    dev-server-manager.ts # Implements IDevServerManager + IServiceProvider
+    extension-manager.ts  # Implements IExtensionManager
+    database-registry.ts  # Multi-engine instance tracker + IServiceProvider
+    service-registry.ts   # Aggregated service status
+    settings-store.ts     # SQLite persistence (settings, instances, projects)
   ipc/
     php.handlers.ts     # php:* channels
     database.handlers.ts # databases:* channels
+    project.handlers.ts # projects:* channels
+    devserver.handlers.ts # devserver:* channels
+    extensions.handlers.ts # extensions:* channels
+    settings.handlers.ts  # settings:get/set
+    autostart.handlers.ts # autostart:* channels
   types/
     php.ts              # PhpVersion, DownloadProgress
     database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
+    project.ts          # Project
+    devserver.ts        # DevServerStatus
+    extension.ts        # ExtensionInfo
 
 src/                    # Renderer process
   app/                  # Global setup, router, App shell
-  pages/                # Route-level components (Dashboard, PHP, Databases)
+  pages/                # Route-level components (Dashboard, PHP, Databases, Projects)
   features/
     php/                # PHP feature module (store, components)
     database/           # Database feature module (store, components)
-  widgets/              # Cross-feature compositions (status cards)
+    projects/           # Project management (store, components)
+    devserver/          # Dev server (store, components)
+    extensions/         # Extension manager (store, components)
+  widgets/              # Cross-feature compositions (status cards: PHP, DB, Projects, Dev Server)
   shared/               # Reusable UI kit (shadcn-vue), types, composables
 ```
 

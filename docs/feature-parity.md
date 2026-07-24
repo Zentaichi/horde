@@ -8,7 +8,7 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | 🔄 | In progress |
 | ☑️ | Planned (post-MVP) |
 
-> **Note:** MVP features are under active development. See the [roadmap](roadmap.md) for current progress.
+> **Note:** Phase 2 is complete. See the [roadmap](roadmap.md) for Phase 3+ plans.
 
 ## PHP Management
 
@@ -17,12 +17,12 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | Download any PHP version | ✔️ |
 | List installed versions | ✔️ |
 | Switch global PHP version | ✔️ |
-| Per-project version via `.php-version` | ☑️ |
-| Enable/disable extensions with UI | ☑️ |
+| Per-project version via `.php-version` | ✔️ |
+| Enable/disable extensions with UI | ✔️ |
 | Edit `php.ini` directly in the app | ☑️ |
-| Run a local development server with a single click | ☑️ |
+| Run a local development server with a single click | ✔️ |
 | Built-in HTTPS via mkcert | ☑️ |
-| Auto-start a chosen PHP version at system boot | ☑️ |
+| Auto-start a chosen PHP version at system boot | ✔️ |
 
 ## Database Management
 
@@ -48,7 +48,7 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 
 | Feature | Status |
 |---------|--------|
-| System tray icon with service status indicators | ☑️ |
+| System tray icon with service status indicators | ✔️ |
 | Automatic cleanup of unused binary versions | ☑️ |
 | JSON configuration file for settings sync | ☑️ |
 | Notifications on service failures | ☑️ |
