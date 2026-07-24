@@ -77,5 +77,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     enable: (phpVersion: string, extensionName: string) => ipcRenderer.invoke('extensions:enable', phpVersion, extensionName),
     disable: (phpVersion: string, extensionName: string) => ipcRenderer.invoke('extensions:disable', phpVersion, extensionName),
   },
+  autostart: {
+    getServices: () => ipcRenderer.invoke('autostart:get-services'),
+    isEnabled: (serviceId: string) => ipcRenderer.invoke('autostart:is-enabled', serviceId),
+    toggle: (serviceId: string, enabled: boolean) => ipcRenderer.invoke('autostart:toggle', serviceId, enabled),
+    isBootEnabled: () => ipcRenderer.invoke('autostart:is-boot-enabled'),
+    toggleBoot: (enabled: boolean) => ipcRenderer.invoke('autostart:toggle-boot', enabled),
+  },
   openDirectory: (path: string) => ipcRenderer.invoke('app:open-directory', path),
 });

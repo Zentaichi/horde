@@ -25,6 +25,8 @@ import { registerSettingsHandlers } from './ipc/settings.handlers';
 import { registerProjectHandlers } from './ipc/project.handlers';
 import { registerDevServerHandlers } from './ipc/devserver.handlers';
 import { registerExtensionHandlers } from './ipc/extensions.handlers';
+import { registerAutoStartHandlers, startAutoServices } from './ipc/autostart.handlers';
+import { createTray } from './tray';
 
 container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
 container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
@@ -70,6 +72,7 @@ app.whenReady().then(async () => {
   registerSettingsHandlers();
   registerProjectHandlers();
   registerExtensionHandlers();
+  registerAutoStartHandlers();
 
   const mysqlManager = container.resolve<IDatabaseEngine>('IDatabaseEngine:mysql');
   const databaseRegistry = container.resolve(DatabaseRegistry);
@@ -87,14 +90,23 @@ app.whenReady().then(async () => {
   registerDevServerHandlers();
 
   createWindow();
+  createTray(mainWindow!);
+
+  await startAutoServices();
+
+  mainWindow!.on('close', (e) => {
+    if (!mainWindow?.isDestroyed()) {
+      e.preventDefault();
+      mainWindow?.hide();
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    else mainWindow?.show();
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  // Don't quit — app lives in tray
 });

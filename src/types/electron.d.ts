@@ -75,6 +75,13 @@ declare global {
         enable: (phpVersion: string, extensionName: string) => Promise<void>;
         disable: (phpVersion: string, extensionName: string) => Promise<void>;
       };
+      autostart: {
+        getServices: () => Promise<any[]>;
+        isEnabled: (serviceId: string) => Promise<boolean>;
+        toggle: (serviceId: string, enabled: boolean) => Promise<void>;
+        isBootEnabled: () => Promise<boolean>;
+        toggleBoot: (enabled: boolean) => Promise<void>;
+      };
       openDirectory: (path: string) => Promise<void>;
     };
   }
