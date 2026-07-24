@@ -11,6 +11,7 @@ import type { IDatabaseEngine } from './services/interfaces/IDatabaseEngine';
 import { MySqlManager } from './services/mysql-manager';
 import { DatabaseRegistry } from './services/database-registry';
 import { SettingsStore } from './services/settings-store';
+import { ServiceRegistry } from './services/service-registry';
 import { registerPhpHandlers } from './ipc/php.handlers';
 import { registerDatabaseHandlers } from './ipc/database.handlers';
 import { registerSettingsHandlers } from './ipc/settings.handlers';
@@ -20,6 +21,7 @@ container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
 container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManager);
 container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
 container.registerSingleton(SettingsStore, SettingsStore);
+container.registerSingleton(ServiceRegistry, ServiceRegistry);
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -57,7 +59,10 @@ app.whenReady().then(async () => {
   const mysqlManager = container.resolve<IDatabaseEngine>('IDatabaseEngine:mysql');
   const databaseRegistry = container.resolve(DatabaseRegistry);
   databaseRegistry.register(mysqlManager);
-  await databaseRegistry.restoreInstances();
+
+  const serviceRegistry = container.resolve(ServiceRegistry);
+  serviceRegistry.registerProvider(databaseRegistry);
+  await serviceRegistry.restoreAll();
   log.info('Database instances restored from store');
 
   registerDatabaseHandlers();
