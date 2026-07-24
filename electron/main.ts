@@ -12,9 +12,19 @@ import { MySqlManager } from './services/mysql-manager';
 import { DatabaseRegistry } from './services/database-registry';
 import { SettingsStore } from './services/settings-store';
 import { ServiceRegistry } from './services/service-registry';
+import type { IProjectManager } from './services/interfaces/IProjectManager';
+import { ProjectManager } from './services/project-manager';
+import type { IDevServerManager } from './services/interfaces/IDevServerManager';
+import { DevServerManager } from './services/dev-server-manager';
+import type { IExtensionManager } from './services/interfaces/IExtensionManager';
+import { ExtensionManager } from './services/extension-manager';
+import type { IServiceProvider } from './services/interfaces/IServiceRegistry';
 import { registerPhpHandlers } from './ipc/php.handlers';
 import { registerDatabaseHandlers } from './ipc/database.handlers';
 import { registerSettingsHandlers } from './ipc/settings.handlers';
+import { registerProjectHandlers } from './ipc/project.handlers';
+import { registerDevServerHandlers } from './ipc/devserver.handlers';
+import { registerExtensionHandlers } from './ipc/extensions.handlers';
 
 container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
 container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
@@ -22,6 +32,9 @@ container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManag
 container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
 container.registerSingleton(SettingsStore, SettingsStore);
 container.registerSingleton(ServiceRegistry, ServiceRegistry);
+container.registerSingleton<IProjectManager>('IProjectManager', ProjectManager);
+container.registerSingleton<IDevServerManager>('IDevServerManager', DevServerManager);
+container.registerSingleton<IExtensionManager>('IExtensionManager', ExtensionManager);
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -55,17 +68,23 @@ app.whenReady().then(async () => {
 
   registerPhpHandlers();
   registerSettingsHandlers();
+  registerProjectHandlers();
+  registerExtensionHandlers();
 
   const mysqlManager = container.resolve<IDatabaseEngine>('IDatabaseEngine:mysql');
   const databaseRegistry = container.resolve(DatabaseRegistry);
   databaseRegistry.register(mysqlManager);
 
+  const devServerManager = container.resolve<IDevServerManager>('IDevServerManager');
+
   const serviceRegistry = container.resolve(ServiceRegistry);
   serviceRegistry.registerProvider(databaseRegistry);
+  serviceRegistry.registerProvider(devServerManager as unknown as IServiceProvider);
   await serviceRegistry.restoreAll();
   log.info('Database instances restored from store');
 
   registerDatabaseHandlers();
+  registerDevServerHandlers();
 
   createWindow();
 

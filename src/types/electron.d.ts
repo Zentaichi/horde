@@ -1,5 +1,8 @@
 import type { PhpVersion, DownloadProgress } from '@/shared/types/php';
 import type { DatabaseVersion, DatabaseInstance, DownloadProgress as DbDownloadProgress } from '@/shared/types/database';
+import type { Project } from '@/shared/types/project';
+import type { DevServerStatus } from '@/shared/types/devserver';
+import type { ExtensionInfo } from '@/shared/types/extensions';
 
 export {};
 
@@ -50,6 +53,27 @@ declare global {
       settings: {
         get: (key: string) => Promise<string | null>;
         set: (key: string, value: string) => Promise<void>;
+      };
+      projects: {
+        list: () => Promise<Project[]>;
+        add: (name: string) => Promise<Project>;
+        remove: (projectId: string) => Promise<void>;
+        scanPhpVersion: (projectId: string) => Promise<string | null>;
+        scanAll: () => Promise<void>;
+        openDir: (projectId: string) => Promise<void>;
+      };
+      devserver: {
+        start: (projectId: string, port?: number) => Promise<DevServerStatus>;
+        stop: (projectId: string) => Promise<void>;
+        getStatus: (projectId: string) => Promise<DevServerStatus | null>;
+        listAll: () => Promise<DevServerStatus[]>;
+        getLogs: (projectId: string, tail?: number) => Promise<string[]>;
+        onLog: (projectId: string, callback: (logs: string[]) => void) => () => void;
+      };
+      extensions: {
+        list: (phpVersion: string) => Promise<ExtensionInfo[]>;
+        enable: (phpVersion: string, extensionName: string) => Promise<void>;
+        disable: (phpVersion: string, extensionName: string) => Promise<void>;
       };
       openDirectory: (path: string) => Promise<void>;
     };

@@ -47,5 +47,35 @@ contextBridge.exposeInMainWorld('electronAPI', {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', key, value),
   },
+  projects: {
+    list: () => ipcRenderer.invoke('projects:list'),
+    add: (name: string) => ipcRenderer.invoke('projects:add', name),
+    remove: (projectId: string) => ipcRenderer.invoke('projects:remove', projectId),
+    scanPhpVersion: (projectId: string) => ipcRenderer.invoke('projects:scan-php-version', projectId),
+    scanAll: () => ipcRenderer.invoke('projects:scan-all'),
+    openDir: (projectId: string) => ipcRenderer.invoke('projects:open-dir', projectId),
+  },
+  devserver: {
+    start: (projectId: string, port?: number) => ipcRenderer.invoke('devserver:start', projectId, port),
+    stop: (projectId: string) => ipcRenderer.invoke('devserver:stop', projectId),
+    getStatus: (projectId: string) => ipcRenderer.invoke('devserver:get-status', projectId),
+    listAll: () => ipcRenderer.invoke('devserver:list-all'),
+    getLogs: (projectId: string, tail?: number) => ipcRenderer.invoke('devserver:get-logs', projectId, tail),
+    onLog: (projectId: string, callback: (logs: string[]) => void) => {
+      const channel = `devserver:log-${projectId}`;
+      const listener = (_event: any, logs: string[]) => callback(logs);
+      ipcRenderer.on(channel, listener);
+      ipcRenderer.send('devserver:subscribe-logs', projectId);
+      return () => {
+        ipcRenderer.send('devserver:unsubscribe-logs', projectId);
+        ipcRenderer.removeListener(channel, listener);
+      };
+    },
+  },
+  extensions: {
+    list: (phpVersion: string) => ipcRenderer.invoke('extensions:list', phpVersion),
+    enable: (phpVersion: string, extensionName: string) => ipcRenderer.invoke('extensions:enable', phpVersion, extensionName),
+    disable: (phpVersion: string, extensionName: string) => ipcRenderer.invoke('extensions:disable', phpVersion, extensionName),
+  },
   openDirectory: (path: string) => ipcRenderer.invoke('app:open-directory', path),
 });
