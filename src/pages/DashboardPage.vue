@@ -10,6 +10,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <PhpStatusWidget />
       <DatabaseStatusWidget />
+      <ProjectStatusWidget />
+      <DevServerStatusWidget />
     </div>
   </div>
 </template>
@@ -17,4 +19,6 @@
 <script setup lang="ts">
 import PhpStatusWidget from '@/widgets/PhpStatusWidget.vue';
 import DatabaseStatusWidget from '@/widgets/DatabaseStatusWidget.vue';
+import ProjectStatusWidget from '@/widgets/ProjectStatusWidget.vue';
+import DevServerStatusWidget from '@/widgets/DevServerStatusWidget.vue';
 </script>
