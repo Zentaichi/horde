@@ -28,6 +28,20 @@ import { registerExtensionHandlers } from './ipc/extensions.handlers';
 import { registerAutoStartHandlers, startAutoServices } from './ipc/autostart.handlers';
 import { createTray } from './tray';
 
+import { MockPhpManager } from './services/__mocks__/mock-php-manager';
+import { MockMySqlManager } from './services/__mocks__/mock-mysql-manager';
+import { MockProjectManager } from './services/__mocks__/mock-project-manager';
+import { MockDevServerManager } from './services/__mocks__/mock-dev-server-manager';
+import { MockExtensionManager } from './services/__mocks__/mock-extension-manager';
+
+function registerE2EServices() {
+  container.registerSingleton<IPhpManager>('IPhpManager', MockPhpManager);
+  container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MockMySqlManager);
+  container.registerSingleton<IProjectManager>('IProjectManager', MockProjectManager);
+  container.registerSingleton<IDevServerManager>('IDevServerManager', MockDevServerManager);
+  container.registerSingleton<IExtensionManager>('IExtensionManager', MockExtensionManager);
+}
+
 container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
 container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
 container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManager);
@@ -67,6 +81,12 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   log.initialize();
   log.info('Horde starting up');
+
+  const isE2E = process.env.HORDE_E2E_TEST === '1';
+  if (isE2E) {
+    registerE2EServices();
+    log.info('E2E test mode — using mock services');
+  }
 
   registerPhpHandlers();
   registerSettingsHandlers();

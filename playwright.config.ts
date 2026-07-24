@@ -6,5 +6,6 @@ export default defineConfig({
   retries: 1,
   use: {
     screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
   },
 });
