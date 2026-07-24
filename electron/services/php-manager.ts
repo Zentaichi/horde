@@ -78,12 +78,18 @@ export class PhpManager implements IPhpManager {
 
   getActiveVersion(): string | null {
     const cached = this.settingsStore.get('active_php_version');
-    if (cached && existsSync(join(this.basePath, cached))) {
-      return cached;
+    if (cached) {
+      const binaryPath = join(this.basePath, cached, 'php' + this.platform.getBinaryExtension());
+      if (existsSync(binaryPath)) return cached;
     }
 
     const version = this.findActiveInPath();
     if (version) {
+      const binaryPath = join(this.basePath, version, 'php' + this.platform.getBinaryExtension());
+      if (!existsSync(binaryPath)) {
+        this.settingsStore.set('active_php_version', '');
+        return null;
+      }
       this.settingsStore.set('active_php_version', version);
     } else if (cached) {
       this.settingsStore.set('active_php_version', '');

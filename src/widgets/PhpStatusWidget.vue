@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed } from 'vue';
 import { usePhpStore } from '@/features/php/stores/phpStore';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -13,15 +13,28 @@ import {
 } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { ArrowRight, Circle } from '@lucide/vue';
+import { ArrowRight, Circle, RefreshCw } from '@lucide/vue';
 
 const store = usePhpStore();
 const { activeVersion, installedVersions, loading } = storeToRefs(store);
 const router = useRouter();
 
-onMounted(async () => {
+async function refresh() {
   await store.fetchActiveVersion();
   await store.fetchInstalledVersions();
+}
+
+function onFocus() {
+  refresh();
+}
+
+onMounted(async () => {
+  await refresh();
+  window.addEventListener('focus', onFocus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', onFocus);
 });
 
 const installedCount = computed(() => installedVersions.value.length);
@@ -37,13 +50,23 @@ const latestInstalled = computed(() => {
 <template>
   <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
-      <CardTitle class="flex items-center gap-2 text-base">
-        <Circle
-          :class="activeVersion ? 'text-green-500 fill-green-500' : 'text-muted-foreground'"
-          class="size-2.5"
-        />
-        PHP
-      </CardTitle>
+      <div class="flex items-center justify-between">
+        <CardTitle class="flex items-center gap-2 text-base">
+          <Circle
+            :class="activeVersion ? 'text-green-500 fill-green-500' : 'text-muted-foreground'"
+            class="size-2.5"
+          />
+          PHP
+        </CardTitle>
+        <button
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          :class="{ 'animate-spin': loading }"
+          @click="refresh"
+          aria-label="Refresh"
+        >
+          <RefreshCw class="size-3.5" />
+        </button>
+      </div>
       <CardDescription>
         <template v-if="activeVersion">
           Active: <span class="font-medium text-foreground">{{ activeVersion }}</span>

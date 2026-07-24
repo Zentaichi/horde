@@ -173,7 +173,7 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
   async getStatuses(): Promise<ServiceStatus[]> {
     const all = await this.listAll();
     return all.map((s) => ({
-      serviceId: s.projectId,
+      serviceId: `${this.providerId}:${s.projectId}`,
       providerId: this.providerId,
       displayName: `${s.projectName} (PHP ${s.phpVersion})`,
       running: s.running,

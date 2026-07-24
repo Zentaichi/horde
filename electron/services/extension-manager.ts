@@ -49,7 +49,7 @@ export class ExtensionManager implements IExtensionManager {
     const iniPath = await this.getPhpIniPath(phpBinary);
     if (!iniPath) throw new Error('Could not locate php.ini.');
 
-    const content = readFileSync(iniPath, 'utf-8');
+    const content = readFileSync(iniPath, 'utf-8').replace(/\r\n/g, '\n');
     const lines = content.split('\n');
     const search = `extension=${extensionName}`;
     const searchDll = `extension=${this.platform.resolveExtensionFileName(extensionName)}`;
@@ -70,7 +70,7 @@ export class ExtensionManager implements IExtensionManager {
     }
 
     if (!found) {
-      lines.push(search);
+      lines.push(searchDll);
     }
 
     writeFileSync(iniPath, lines.join('\n'), 'utf-8');
@@ -81,7 +81,7 @@ export class ExtensionManager implements IExtensionManager {
     const iniPath = await this.getPhpIniPath(phpBinary);
     if (!iniPath) throw new Error('Could not locate php.ini.');
 
-    const content = readFileSync(iniPath, 'utf-8');
+    const content = readFileSync(iniPath, 'utf-8').replace(/\r\n/g, '\n');
     const lines = content.split('\n');
     const search = `extension=${extensionName}`;
     const searchDll = `extension=${this.platform.resolveExtensionFileName(extensionName)}`;
@@ -122,7 +122,7 @@ export class ExtensionManager implements IExtensionManager {
   }
 
   private parseEnabledExtensions(iniPath: string): Set<string> {
-    const content = readFileSync(iniPath, 'utf-8');
+    const content = readFileSync(iniPath, 'utf-8').replace(/\r\n/g, '\n');
     const enabled = new Set<string>();
     const re = /^extension\s*=\s*(?:php_)?(\w+)/gm;
     let match;

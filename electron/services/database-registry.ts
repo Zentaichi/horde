@@ -77,7 +77,7 @@ export class DatabaseRegistry implements IServiceProvider {
   async getStatuses(): Promise<ServiceStatus[]> {
     const instances = await this.listAllInstances();
     return instances.map((inst) => ({
-      serviceId: inst.instanceId,
+      serviceId: `${this.providerId}:${inst.instanceId}`,
       providerId: this.providerId,
       engine: inst.engine,
       displayName: `${inst.engine} ${inst.version}`,
