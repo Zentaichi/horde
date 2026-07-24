@@ -29,10 +29,10 @@ export class DatabaseRegistry implements IServiceProvider {
     return inst;
   }
 
-  resolveEngineByInstance(instanceId: string): IDatabaseEngine {
+  async resolveEngineByInstance(instanceId: string): Promise<IDatabaseEngine> {
     for (const engine of this.engines.values()) {
       try {
-        engine.getStatus(instanceId);
+        await engine.getStatus(instanceId);
         return engine;
       } catch {
         // Not this engine's instance, try next
@@ -56,7 +56,7 @@ export class DatabaseRegistry implements IServiceProvider {
   }
 
   async deleteInstance(instanceId: string): Promise<void> {
-    const engine = this.resolveEngineByInstance(instanceId);
+    const engine = await this.resolveEngineByInstance(instanceId);
     await engine.removeInstance(instanceId);
     this.settingsStore.deleteInstance(instanceId);
   }

@@ -63,7 +63,7 @@ export function registerAutoStartHandlers() {
     try {
       if (providerId === 'mysql') {
         const dbReg = container.resolve(DatabaseRegistry);
-        const engine = dbReg.resolveEngineByInstance(id);
+        const engine = await dbReg.resolveEngineByInstance(id);
         await engine.start(id);
       } else if (providerId === 'devserver') {
         const dsManager = container.resolve<IDevServerManager>('IDevServerManager');
@@ -86,7 +86,7 @@ export async function startAutoServices() {
     try {
       if (providerId === 'mysql') {
         const dbReg = container.resolve(DatabaseRegistry);
-        const engine = dbReg.resolveEngineByInstance(id);
+        const engine = await dbReg.resolveEngineByInstance(id);
         await engine.start(id);
         log.info(`Auto-started MySQL instance ${id}`);
       } else if (providerId === 'devserver') {

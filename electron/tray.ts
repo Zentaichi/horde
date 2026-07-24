@@ -3,6 +3,7 @@ import { container } from 'tsyringe';
 import { ServiceRegistry } from './services/service-registry';
 
 let tray: Tray | null = null;
+let contextMenuInterval: ReturnType<typeof setInterval> | null = null;
 
 function createPlaceholderIcon(): Electron.NativeImage {
   const size = 16;
@@ -80,10 +81,11 @@ export function createTray(win: BrowserWindow): void {
     tray?.popUpContextMenu(menu);
   });
 
-  setInterval(async () => {
+  if (contextMenuInterval) clearInterval(contextMenuInterval);
+
+  contextMenuInterval = setInterval(() => {
     if (tray && !win.isDestroyed()) {
-      const menu = await buildContextMenu(win);
-      tray.setContextMenu(menu);
+      buildContextMenu(win).then((menu) => tray?.setContextMenu(menu)).catch(() => {});
     }
   }, 5000);
 }

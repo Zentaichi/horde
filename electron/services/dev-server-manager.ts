@@ -18,6 +18,9 @@ interface ServerEntry {
   port: number;
   process: ChildProcess | null;
   logBuffer: string[];
+  onStdout: ((data: Buffer) => void) | null;
+  onStderr: ((data: Buffer) => void) | null;
+  onExit: (() => void) | null;
 }
 
 @injectable()
@@ -69,9 +72,12 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
       port: assignedPort,
       process: child,
       logBuffer: [],
+      onStdout: null,
+      onStderr: null,
+      onExit: null,
     };
 
-    child.stdout?.on('data', (data: Buffer) => {
+    const onStdout = (data: Buffer) => {
       const lines = data.toString().split('\n').filter((l) => l.trim());
       for (const line of lines) {
         entry.logBuffer.push(line);
@@ -79,9 +85,9 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
           entry.logBuffer.shift();
         }
       }
-    });
+    };
 
-    child.stderr?.on('data', (data: Buffer) => {
+    const onStderr = (data: Buffer) => {
       const lines = data.toString().split('\n').filter((l) => l.trim());
       for (const line of lines) {
         entry.logBuffer.push(line);
@@ -89,12 +95,25 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
           entry.logBuffer.shift();
         }
       }
-    });
+    };
 
-    child.on('exit', () => {
+    const onExit = () => {
       const e = this.servers.get(projectId);
-      if (e) e.process = null;
-    });
+      if (e) {
+        e.process = null;
+        e.onStdout = null;
+        e.onStderr = null;
+        e.onExit = null;
+      }
+    };
+
+    child.stdout?.on('data', onStdout);
+    child.stderr?.on('data', onStderr);
+    child.on('exit', onExit);
+
+    entry.onStdout = onStdout;
+    entry.onStderr = onStderr;
+    entry.onExit = onExit;
 
     this.servers.set(projectId, entry);
 
@@ -115,6 +134,11 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
 
     if (entry.process) {
       const child = entry.process;
+
+      child.stdout?.removeListener('data', entry.onStdout!);
+      child.stderr?.removeListener('data', entry.onStderr!);
+      child.removeListener('exit', entry.onExit!);
+
       if (child.pid && process.platform === 'win32') {
         const { execFile } = await import('child_process');
         const { promisify } = await import('util');
@@ -126,6 +150,18 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
         }
       } else {
         child.kill('SIGTERM');
+
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            try { child.kill('SIGKILL'); } catch {}
+            resolve();
+          }, 5000);
+
+          child.on('exit', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
       }
       entry.process = null;
     }

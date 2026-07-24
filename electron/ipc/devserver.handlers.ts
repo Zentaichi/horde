@@ -39,5 +39,9 @@ export function registerDevServerHandlers() {
     event.sender.once('devserver:unsubscribe-logs' as any, () => {
       clearInterval(interval);
     });
+
+    event.sender.once('destroyed', () => {
+      clearInterval(interval);
+    });
   });
 }

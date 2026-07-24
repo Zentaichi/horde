@@ -51,7 +51,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:start',
     async (_event, instanceId: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.start(instanceId);
     },
   );
@@ -59,7 +59,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:stop',
     async (_event, instanceId: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.stop(instanceId);
     },
   );
@@ -67,7 +67,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:get-status',
     async (_event, instanceId: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       return await inst.getStatus(instanceId);
     },
   );
@@ -108,7 +108,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:create-database',
     async (_event, instanceId: string, name: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.createDatabase(instanceId, name);
     },
   );
@@ -116,7 +116,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:drop-database',
     async (_event, instanceId: string, name: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.dropDatabase(instanceId, name);
     },
   );
@@ -124,7 +124,7 @@ export function registerDatabaseHandlers() {
   ipcMain.handle(
     'databases:list-databases',
     async (_event, instanceId: string) => {
-      const inst = registry.resolveEngineByInstance(instanceId);
+      const inst = await registry.resolveEngineByInstance(instanceId);
       return await inst.listDatabases(instanceId);
     },
   );

@@ -42,15 +42,21 @@ function registerE2EServices() {
   container.registerSingleton<IExtensionManager>('IExtensionManager', MockExtensionManager);
 }
 
-container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
-container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
-container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManager);
-container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
-container.registerSingleton(SettingsStore, SettingsStore);
-container.registerSingleton(ServiceRegistry, ServiceRegistry);
-container.registerSingleton<IProjectManager>('IProjectManager', ProjectManager);
-container.registerSingleton<IDevServerManager>('IDevServerManager', DevServerManager);
-container.registerSingleton<IExtensionManager>('IExtensionManager', ExtensionManager);
+const isE2E = process.env.HORDE_E2E_TEST === '1';
+
+if (isE2E) {
+  registerE2EServices();
+} else {
+  container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
+  container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
+  container.registerSingleton<IDatabaseEngine>('IDatabaseEngine:mysql', MySqlManager);
+  container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
+  container.registerSingleton(SettingsStore, SettingsStore);
+  container.registerSingleton(ServiceRegistry, ServiceRegistry);
+  container.registerSingleton<IProjectManager>('IProjectManager', ProjectManager);
+  container.registerSingleton<IDevServerManager>('IDevServerManager', DevServerManager);
+  container.registerSingleton<IExtensionManager>('IExtensionManager', ExtensionManager);
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -81,12 +87,7 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   log.initialize();
   log.info('Horde starting up');
-
-  const isE2E = process.env.HORDE_E2E_TEST === '1';
-  if (isE2E) {
-    registerE2EServices();
-    log.info('E2E test mode — using mock services');
-  }
+  if (isE2E) log.info('E2E test mode — using mock services');
 
   registerPhpHandlers();
   registerSettingsHandlers();

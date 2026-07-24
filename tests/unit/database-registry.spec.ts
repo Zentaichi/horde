@@ -190,7 +190,7 @@ describe('DatabaseRegistry', () => {
         datadir: '/data',
       });
 
-      expect(registry.resolveEngineByInstance('inst-1')).toBe(mysql);
+      expect(await registry.resolveEngineByInstance('inst-1')).toBe(mysql);
     });
   });
 
