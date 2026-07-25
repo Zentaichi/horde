@@ -13,14 +13,25 @@
     "build:electron": "tsc -p tsconfig.node.json",
     "build": "npm run build:renderer && npm run build:electron && electron-builder",
     "test": "vitest run",
+    "pretest:e2e": "npm run build:renderer && npm run build:electron",
     "test:e2e": "playwright test",
     "lint": "eslint src/",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "lint-staged": {
+    "*.{ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md,yml}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
     "@playwright/test": "^1.61.1",

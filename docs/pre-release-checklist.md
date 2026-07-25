@@ -2,10 +2,26 @@
 
 Run through these items before cutting a release.
 
-## Verify Build
+## Automated gates (run on every push)
 
-- [ ] Run `npm run build` and confirm it completes without errors
-- [ ] Verify `release/Horde Setup <version>.exe` is produced
-- [ ] Launch `release/win-unpacked/Horde.exe` and verify the app loads without errors
-- [ ] Confirm `dist-electron/**/*` is included in `electron-builder.yml` (not raw `electron/**/*`)
-- [ ] Confirm `vite.config.ts` has `base: './'` set for relative asset paths
+These run automatically in CI for every push to `master` and every PR. They must all pass:
+
+- [ ] **Lint** — `npm run lint` passes with no errors
+- [ ] **Typecheck** — `npm run typecheck` passes with no errors
+- [ ] **Unit tests** — `npm run test` passes (all 24 tests green)
+- [ ] **Build** — `npm run build` produces `release/Horde Setup <version>.exe` without errors
+
+## Manual verification
+
+- [ ] Launch `release/win-unpacked/Horde.exe` — app opens, dashboard renders, no blank window
+- [ ] Click through each page (PHP, Databases, Projects, Dev Servers) — no crashes or blank pages
+
+## E2E tests
+
+E2E tests run in CI with `continue-on-error: true` (non-blocking). Run manually before release:
+
+- [ ] `npm run test:e2e` — all 6 E2E tests pass
+
+## Releasing
+
+- [ ] Push a `v<version>` tag (e.g. `v0.5.0`) — the `release.yml` workflow builds and creates a GitHub Release automatically
