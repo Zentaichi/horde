@@ -3,6 +3,7 @@ dist/
 dist-electron/
 release/
 out/
+test-results/
 .env
 *.log
 .DS_Store
