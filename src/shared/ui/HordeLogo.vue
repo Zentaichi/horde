@@ -14,13 +14,14 @@ const props = withDefaults(
 );
 
 const patched = computed(() =>
-  svgRaw.replace(
-    "<svg",
-    `<svg width="${props.size}" height="${props.size}" fill="${props.color}"`,
-  ),
+  svgRaw.replace("<svg", `<svg width="${props.size}" height="${props.size}"`),
 );
 </script>
 
 <template>
-  <span class="horde-logo inline-flex" v-html="patched"></span>
+  <span
+    class="horde-logo inline-flex"
+    :style="{ color: props.color }"
+    v-html="patched"
+  ></span>
 </template>
