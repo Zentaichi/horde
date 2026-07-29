@@ -1,10 +1,13 @@
 <template>
   <div class="min-h-screen bg-background">
-    <nav class="border-b border-border bg-card px-4 py-3 flex items-center gap-1">
+    <nav
+      class="border-b border-border bg-card px-4 py-3 flex items-center gap-1"
+    >
       <router-link
         to="/dashboard"
-        class="font-semibold text-sm tracking-tight px-2 hover:text-foreground transition-colors"
+        class="flex items-center gap-2 font-semibold text-sm tracking-tight px-2 hover:text-foreground transition-colors"
       >
+        <HordeLogo :size="22" />
         Horde
       </router-link>
 
@@ -48,5 +51,6 @@
 </template>
 
 <script setup lang="ts">
-import ThemeToggle from '@/shared/ui/ThemeToggle.vue';
+import ThemeToggle from "@/shared/ui/ThemeToggle.vue";
+import HordeLogo from "@/shared/ui/HordeLogo.vue";
 </script>

@@ -100,6 +100,7 @@ let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
+    title: "Horde",
     width: 1100,
     height: 750,
     show: false,

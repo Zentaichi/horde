@@ -9,7 +9,7 @@ files:
   - package.json
 win:
   target: nsis
-  icon: resources/icon.ico
+  icon: resources/horde_icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

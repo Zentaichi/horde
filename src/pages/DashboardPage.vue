@@ -3,7 +3,7 @@
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
       <p class="text-sm text-muted-foreground">
-        Overview of your local development environment
+        Resurrect and animate your dev services
       </p>
     </div>
 
@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import PhpStatusWidget from '@/widgets/PhpStatusWidget.vue';
-import DatabaseStatusWidget from '@/widgets/DatabaseStatusWidget.vue';
-import ProjectStatusWidget from '@/widgets/ProjectStatusWidget.vue';
-import DevServerStatusWidget from '@/widgets/DevServerStatusWidget.vue';
+import PhpStatusWidget from "@/widgets/PhpStatusWidget.vue";
+import DatabaseStatusWidget from "@/widgets/DatabaseStatusWidget.vue";
+import ProjectStatusWidget from "@/widgets/ProjectStatusWidget.vue";
+import DevServerStatusWidget from "@/widgets/DevServerStatusWidget.vue";
 </script>
