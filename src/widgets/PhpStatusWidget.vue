@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue';
-import { usePhpStore } from '@/features/php/stores/phpStore';
-import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { onMounted, onUnmounted, computed } from "vue";
+import { usePhpStore } from "@/features/php/stores/phpStore";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 import {
   Card,
   CardContent,
@@ -10,10 +10,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/shared/ui/card';
-import { Badge } from '@/shared/ui/badge';
-import { Button } from '@/shared/ui/button';
-import { ArrowRight, Circle, RefreshCw } from '@lucide/vue';
+} from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { ArrowRight, Circle, FileCode2, RefreshCw } from "@lucide/vue";
 
 const store = usePhpStore();
 const { activeVersion, installedVersions, loading } = storeToRefs(store);
@@ -30,11 +30,11 @@ function onFocus() {
 
 onMounted(async () => {
   await refresh();
-  window.addEventListener('focus', onFocus);
+  window.addEventListener("focus", onFocus);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('focus', onFocus);
+  window.removeEventListener("focus", onFocus);
 });
 
 const installedCount = computed(() => installedVersions.value.length);
@@ -52,9 +52,9 @@ const latestInstalled = computed(() => {
     <CardHeader class="pb-2">
       <div class="flex items-center justify-between">
         <CardTitle class="flex items-center gap-2 text-base">
-          <Circle
-            :class="activeVersion ? 'text-green-500 fill-green-500' : 'text-muted-foreground'"
-            class="size-2.5"
+          <FileCode2
+            :class="activeVersion ? 'text-[#F97316]' : 'text-muted-foreground'"
+            class="size-4"
           />
           PHP
         </CardTitle>
@@ -69,11 +69,10 @@ const latestInstalled = computed(() => {
       </div>
       <CardDescription>
         <template v-if="activeVersion">
-          Active: <span class="font-medium text-foreground">{{ activeVersion }}</span>
+          Risen:
+          <span class="font-medium text-foreground">{{ activeVersion }}</span>
         </template>
-        <template v-else>
-          No active version
-        </template>
+        <template v-else> Dormant </template>
       </CardDescription>
     </CardHeader>
 
@@ -82,15 +81,13 @@ const latestInstalled = computed(() => {
         <div v-if="installedCount > 0">
           <p>
             <span class="font-semibold">{{ installedCount }}</span>
-            {{ installedCount === 1 ? 'version' : 'versions' }} installed
+            {{ installedCount === 1 ? "version" : "versions" }} installed
           </p>
           <p v-if="latestInstalled" class="text-muted-foreground text-xs">
             Latest: {{ latestInstalled.version }}
           </p>
         </div>
-        <p v-else class="text-muted-foreground">
-          No versions installed yet.
-        </p>
+        <p v-else class="text-muted-foreground">No versions installed yet.</p>
       </div>
     </CardContent>
 

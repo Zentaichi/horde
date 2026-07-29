@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
-import { useDatabaseStore } from '@/features/database/stores/databaseStore';
-import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { onMounted, computed } from "vue";
+import { useDatabaseStore } from "@/features/database/stores/databaseStore";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 import {
   Card,
   CardContent,
@@ -10,9 +10,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/shared/ui/card';
-import { Button } from '@/shared/ui/button';
-import { ArrowRight, Circle } from '@lucide/vue';
+} from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { ArrowRight, Circle, Database } from "@lucide/vue";
 
 const store = useDatabaseStore();
 const { instances } = storeToRefs(store);
@@ -23,8 +23,8 @@ onMounted(async () => {
   await store.fetchInstances();
 });
 
-const runningCount = computed(() =>
-  instances.value.filter((i) => i.running).length,
+const runningCount = computed(
+  () => instances.value.filter((i) => i.running).length,
 );
 
 const runningInstances = computed(() =>
@@ -36,19 +36,18 @@ const runningInstances = computed(() =>
   <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
       <CardTitle class="flex items-center gap-2 text-base">
-        <Circle
-          :class="runningCount > 0 ? 'text-green-500 fill-green-500' : 'text-muted-foreground'"
-          class="size-2.5"
+        <Database
+          :class="runningCount > 0 ? 'text-[#F97316]' : 'text-muted-foreground'"
+          class="size-4"
         />
         Databases
       </CardTitle>
       <CardDescription>
         <template v-if="runningCount > 0">
-          Running: <span class="font-medium text-foreground">{{ runningCount }}</span>
+          Risen:
+          <span class="font-medium text-foreground">{{ runningCount }}</span>
         </template>
-        <template v-else>
-          No instances running
-        </template>
+        <template v-else> Dormant </template>
       </CardDescription>
     </CardHeader>
 
@@ -60,7 +59,9 @@ const runningInstances = computed(() =>
           class="flex items-center gap-1.5 text-sm"
         >
           <Circle class="size-1.5 text-green-500 fill-green-500" />
-          <span class="font-medium">{{ inst.engine || 'MySQL' }} {{ inst.version }}</span>
+          <span class="font-medium"
+            >{{ inst.engine || "MySQL" }} {{ inst.version }}</span
+          >
           <span class="text-muted-foreground">@ :{{ inst.port }}</span>
         </div>
       </div>

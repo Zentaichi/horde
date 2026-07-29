@@ -1,13 +1,13 @@
 <template>
   <div class="min-h-screen bg-background">
     <nav
-      class="border-b border-border bg-card px-4 py-3 flex items-center gap-1"
+      class="border-b border-border bg-card px-4 py-2 flex items-center gap-1"
     >
       <router-link
         to="/dashboard"
         class="flex items-center gap-2 font-semibold text-sm tracking-tight px-2 hover:text-foreground transition-colors"
       >
-        <HordeLogo :size="22" />
+        <HordeLogo :size="30" />
         Horde
       </router-link>
 

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
-import { useDevServerStore } from '@/features/devserver/stores/devServerStore';
-import { storeToRefs } from 'pinia';
+import { onMounted, computed } from "vue";
+import { useDevServerStore } from "@/features/devserver/stores/devServerStore";
+import { storeToRefs } from "pinia";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/shared/ui/card';
-import { Circle, Server } from '@lucide/vue';
+} from "@/shared/ui/card";
+import { Circle, Server } from "@lucide/vue";
 
 const store = useDevServerStore();
 const { servers } = storeToRefs(store);
@@ -18,29 +18,29 @@ onMounted(async () => {
   await store.fetchAll();
 });
 
-const runningCount = computed(() =>
-  servers.value.filter((s) => s.running).length,
+const runningCount = computed(
+  () => servers.value.filter((s) => s.running).length,
 );
 
-const runningServers = computed(() =>
-  servers.value.filter((s) => s.running),
-);
+const runningServers = computed(() => servers.value.filter((s) => s.running));
 </script>
 
 <template>
   <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
       <CardTitle class="flex items-center gap-2 text-base">
-        <Server class="size-4 text-muted-foreground" />
+        <Server
+          :class="runningCount > 0 ? 'text-[#F97316]' : 'text-muted-foreground'"
+          class="size-4"
+        />
         Dev Servers
       </CardTitle>
       <CardDescription>
         <template v-if="runningCount > 0">
-          Running: <span class="font-medium text-foreground">{{ runningCount }}</span>
+          Risen:
+          <span class="font-medium text-foreground">{{ runningCount }}</span>
         </template>
-        <template v-else>
-          No servers running
-        </template>
+        <template v-else> Dormant </template>
       </CardDescription>
     </CardHeader>
 
