@@ -1,6 +1,9 @@
 <template>
   <div class="space-y-3">
-    <div v-if="projects.length === 0" class="text-sm text-muted-foreground py-8 text-center">
+    <div
+      v-if="projects.length === 0"
+      class="text-sm text-muted-foreground py-8 text-center"
+    >
       No projects added yet. Click "Add Project" to get started.
     </div>
 
@@ -20,15 +23,47 @@
           <Badge v-if="project.phpVersion" variant="secondary" class="text-xs">
             PHP {{ project.phpVersion }}
           </Badge>
+          <Badge
+            v-if="project.phpVersion && project.isPhpVersionInstalled === false"
+            variant="destructive"
+            class="text-xs"
+          >
+            Not installed
+          </Badge>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="xs" @click="$emit('scan', project.id)">
-          <RefreshCw class="size-3 mr-1" />
-          Rescan
-        </Button>
-        <Button variant="outline" size="xs" @click="$emit('openDir', project.id)">
+        <div class="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="xs"
+            @click="$emit('scan', project.id)"
+          >
+            <RefreshCw class="size-3 mr-1" />
+            Rescan
+          </Button>
+          <span
+            v-if="recentScanResult(project.id)"
+            class="text-xs italic"
+            :class="
+              recentScanResult(project.id)?.version
+                ? 'text-green-500'
+                : 'text-muted-foreground'
+            "
+          >
+            {{
+              recentScanResult(project.id)?.version
+                ? "Found PHP " + recentScanResult(project.id)?.version
+                : "No .php-version file"
+            }}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="xs"
+          @click="$emit('openDir', project.id)"
+        >
           <FolderOpen class="size-3 mr-1" />
           Open
         </Button>
@@ -48,11 +83,12 @@
 </template>
 
 <script setup lang="ts">
-import type { Project } from '@/shared/types/project';
-import { Badge } from '@/shared/ui/badge';
-import { Button } from '@/shared/ui/button';
-import { RefreshCw, FolderOpen, Trash2 } from '@lucide/vue';
-import DevServerPanel from '@/features/devserver/components/DevServerPanel.vue';
+import type { Project } from "@/shared/types/project";
+import { useProjectStore } from "@/features/projects/stores/projectStore";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { RefreshCw, FolderOpen, Trash2 } from "@lucide/vue";
+import DevServerPanel from "@/features/devserver/components/DevServerPanel.vue";
 
 defineProps<{
   projects: Project[];
@@ -63,4 +99,13 @@ defineEmits<{
   openDir: [projectId: string];
   remove: [projectId: string];
 }>();
+
+const store = useProjectStore();
+
+function recentScanResult(projectId: string) {
+  const result = store.getScanResult(projectId);
+  if (!result) return null;
+  if (Date.now() - result.timestamp > 4000) return null;
+  return result;
+}
 </script>

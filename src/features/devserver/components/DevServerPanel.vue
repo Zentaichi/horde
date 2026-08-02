@@ -10,13 +10,24 @@
       <Play class="size-3 mr-1" />
       Serve
     </Button>
+    <span
+      v-if="!server && storeError"
+      class="text-xs text-destructive italic max-w-48 truncate"
+      :title="storeError"
+    >
+      {{ storeError }}
+    </span>
     <template v-else>
       <div class="flex items-center gap-1">
         <Circle
-          :class="server.running ? 'text-green-500 fill-green-500' : 'text-muted-foreground'"
+          :class="
+            server?.running
+              ? 'text-green-500 fill-green-500'
+              : 'text-muted-foreground'
+          "
           class="size-2"
         />
-        <span class="text-xs text-muted-foreground">:{{ server.port }}</span>
+        <span class="text-xs text-muted-foreground">:{{ server?.port }}</span>
       </div>
       <Button
         variant="ghost"
@@ -45,12 +56,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useDevServerStore } from '@/features/devserver/stores/devServerStore';
-import { storeToRefs } from 'pinia';
-import { Button } from '@/shared/ui/button';
-import { Play, Square, Terminal, Circle } from '@lucide/vue';
-import LogViewer from './LogViewer.vue';
+import { ref, computed, onMounted } from "vue";
+import { useDevServerStore } from "@/features/devserver/stores/devServerStore";
+import { storeToRefs } from "pinia";
+import { Button } from "@/shared/ui/button";
+import { Play, Square, Terminal, Circle } from "@lucide/vue";
+import LogViewer from "./LogViewer.vue";
 
 const props = defineProps<{
   projectId: string;
@@ -58,7 +69,7 @@ const props = defineProps<{
 }>();
 
 const store = useDevServerStore();
-const { servers, loading } = storeToRefs(store);
+const { servers, loading, error: storeError } = storeToRefs(store);
 const showLogs = ref(false);
 
 const server = computed(() =>

@@ -1,13 +1,14 @@
-import { join } from 'path';
-import { existsSync, readdirSync, mkdirSync } from 'fs';
-import { ensureDir, remove } from 'fs-extra';
-import { tmpdir } from 'os';
-import { inject, injectable } from 'tsyringe';
-import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
-import type { IPhpManager } from './interfaces/IPhpManager';
-import type { PhpVersion, DownloadProgress } from '../types/php';
-import { downloadFile } from '../utils/download';
-import { SettingsStore } from './settings-store';
+import { join } from "path";
+import { existsSync, readdirSync, mkdirSync } from "fs";
+import { ensureDir, remove } from "fs-extra";
+import { tmpdir } from "os";
+import { execSync } from "child_process";
+import { inject, injectable } from "tsyringe";
+import type { IPlatformAdapter } from "../platform/IPlatformAdapter";
+import type { IPhpManager } from "./interfaces/IPhpManager";
+import type { PhpVersion, DownloadProgress } from "../types/php";
+import { downloadFile } from "../utils/download";
+import { SettingsStore } from "./settings-store";
 
 interface PhpRelease {
   version: string;
@@ -20,10 +21,10 @@ export class PhpManager implements IPhpManager {
   private releasesCache: Record<string, PhpRelease> | null = null;
 
   constructor(
-    @inject('IPlatformAdapter') private readonly platform: IPlatformAdapter,
+    @inject("IPlatformAdapter") private readonly platform: IPlatformAdapter,
     @inject(SettingsStore) private readonly settingsStore: SettingsStore,
   ) {
-    this.basePath = this.platform.getDefaultRuntimeInstallDir('php');
+    this.basePath = this.platform.getDefaultRuntimeInstallDir("php");
     if (!existsSync(this.basePath)) {
       mkdirSync(this.basePath, { recursive: true });
     }
@@ -34,7 +35,11 @@ export class PhpManager implements IPhpManager {
     const versions: string[] = [];
     for (const key of Object.keys(data)) {
       const entry = data[key];
-      if (entry && typeof entry === 'object' && typeof entry.version === 'string') {
+      if (
+        entry &&
+        typeof entry === "object" &&
+        typeof entry.version === "string"
+      ) {
         versions.push(entry.version);
       }
     }
@@ -62,7 +67,7 @@ export class PhpManager implements IPhpManager {
     }
 
     const zipUrl = await this.getDownloadUrl(version);
-    const tempDir = join(tmpdir(), 'horde-php-downloads');
+    const tempDir = join(tmpdir(), "horde-php-downloads");
     const zipPath = join(tempDir, `php-${version}.zip`);
 
     await ensureDir(tempDir);
@@ -77,22 +82,30 @@ export class PhpManager implements IPhpManager {
   }
 
   getActiveVersion(): string | null {
-    const cached = this.settingsStore.get('active_php_version');
+    const cached = this.settingsStore.get("active_php_version");
     if (cached) {
-      const binaryPath = join(this.basePath, cached, 'php' + this.platform.getBinaryExtension());
+      const binaryPath = join(
+        this.basePath,
+        cached,
+        "php" + this.platform.getBinaryExtension(),
+      );
       if (existsSync(binaryPath)) return cached;
     }
 
     const version = this.findActiveInPath();
     if (version) {
-      const binaryPath = join(this.basePath, version, 'php' + this.platform.getBinaryExtension());
+      const binaryPath = join(
+        this.basePath,
+        version,
+        "php" + this.platform.getBinaryExtension(),
+      );
       if (!existsSync(binaryPath)) {
-        this.settingsStore.set('active_php_version', '');
+        this.settingsStore.set("active_php_version", "");
         return null;
       }
-      this.settingsStore.set('active_php_version', version);
+      this.settingsStore.set("active_php_version", version);
     } else if (cached) {
-      this.settingsStore.set('active_php_version', '');
+      this.settingsStore.set("active_php_version", "");
     }
     return version;
   }
@@ -108,7 +121,7 @@ export class PhpManager implements IPhpManager {
     cleaned.unshift(versionPath);
 
     await this.platform.writePathEntries(cleaned);
-    this.settingsStore.set('active_php_version', version);
+    this.settingsStore.set("active_php_version", version);
   }
 
   async uninstallVersion(version: string): Promise<void> {
@@ -122,10 +135,42 @@ export class PhpManager implements IPhpManager {
       const entries = await this.platform.getPathEntries();
       const cleaned = this.filterHordeEntries(entries);
       await this.platform.writePathEntries(cleaned);
-      this.settingsStore.set('active_php_version', '');
+      this.settingsStore.set("active_php_version", "");
     }
 
     await remove(versionPath);
+  }
+
+  findPhpInPath(): { version: string; binary: string } | null {
+    const ext = this.platform.getBinaryExtension();
+    const binName = "php" + ext;
+    const entries = (process.env.PATH || "").split(";");
+
+    for (const entry of entries) {
+      const candidate = join(entry.trim(), binName);
+      if (!existsSync(candidate)) continue;
+
+      try {
+        const result = execSync(`"${candidate}" -v`, {
+          encoding: "utf-8",
+          timeout: 5000,
+        });
+        const match = result.match(/PHP\s+(\d+\.\d+\.\d+)/);
+        const version = match ? match[1] : "system";
+        return { version, binary: candidate };
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  isVersionInstalled(version: string): boolean {
+    const ext = this.platform.getBinaryExtension();
+    const binary = join(this.basePath, version, "php" + ext);
+    if (existsSync(binary)) return true;
+    const systemPhp = this.findPhpInPath();
+    return systemPhp !== null && systemPhp.version === version;
   }
 
   private async fetchReleases(): Promise<Record<string, PhpRelease>> {
@@ -157,14 +202,16 @@ export class PhpManager implements IPhpManager {
     }
 
     const preferredArch = Object.keys(targetRelease).find(
-      (k) => k.startsWith('nts-') && k.endsWith('-x64'),
+      (k) => k.startsWith("nts-") && k.endsWith("-x64"),
     );
     if (preferredArch && targetRelease[preferredArch]?.zip?.path) {
-      return this.platform.getPhpDownloadUrl(targetRelease[preferredArch].zip.path);
+      return this.platform.getPhpDownloadUrl(
+        targetRelease[preferredArch].zip.path,
+      );
     }
 
     const anyNts = Object.keys(targetRelease).find(
-      (k) => k.startsWith('nts-') && targetRelease[k]?.zip?.path,
+      (k) => k.startsWith("nts-") && targetRelease[k]?.zip?.path,
     );
     if (anyNts && targetRelease[anyNts]?.zip?.path) {
       return this.platform.getPhpDownloadUrl(targetRelease[anyNts].zip.path);
@@ -185,10 +232,12 @@ export class PhpManager implements IPhpManager {
   }
 
   private findActiveInPath(): string | null {
-    const entries = (process.env.PATH || '').split(';');
+    const entries = (process.env.PATH || "").split(";");
     for (const entry of entries) {
       if (entry.startsWith(this.basePath)) {
-        const relative = entry.slice(this.basePath.length).replace(/^[\\/]+/, '');
+        const relative = entry
+          .slice(this.basePath.length)
+          .replace(/^[\\/]+/, "");
         const version = relative.split(/[\\/]/)[0];
         if (version) return version;
       }

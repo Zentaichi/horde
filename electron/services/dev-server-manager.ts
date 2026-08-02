@@ -1,14 +1,17 @@
-import { join } from 'path';
-import { spawn, type ChildProcess } from 'child_process';
-import { existsSync } from 'fs';
-import { createServer } from 'net';
-import { inject, injectable } from 'tsyringe';
-import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
-import type { IPhpManager } from './interfaces/IPhpManager';
-import type { IProjectManager } from './interfaces/IProjectManager';
-import type { IDevServerManager } from './interfaces/IDevServerManager';
-import type { IServiceProvider, ServiceStatus } from './interfaces/IServiceRegistry';
-import type { DevServerStatus } from '../types/devserver';
+import { join } from "path";
+import { spawn, type ChildProcess } from "child_process";
+import { existsSync } from "fs";
+import { createServer } from "net";
+import { inject, injectable } from "tsyringe";
+import type { IPlatformAdapter } from "../platform/IPlatformAdapter";
+import type { IPhpManager } from "./interfaces/IPhpManager";
+import type { IProjectManager } from "./interfaces/IProjectManager";
+import type { IDevServerManager } from "./interfaces/IDevServerManager";
+import type {
+  IServiceProvider,
+  ServiceStatus,
+} from "./interfaces/IServiceRegistry";
+import type { DevServerStatus } from "../types/devserver";
 
 interface ServerEntry {
   projectId: string;
@@ -25,44 +28,44 @@ interface ServerEntry {
 
 @injectable()
 export class DevServerManager implements IDevServerManager, IServiceProvider {
-  readonly providerId = 'devserver';
-  readonly displayName = 'Dev Servers';
+  readonly providerId = "devserver";
+  readonly displayName = "Dev Servers";
 
   private readonly servers = new Map<string, ServerEntry>();
   private readonly MAX_LOG_LINES = 500;
 
   constructor(
-    @inject('IPlatformAdapter') private readonly platform: IPlatformAdapter,
-    @inject('IPhpManager') private readonly phpManager: IPhpManager,
-    @inject('IProjectManager') private readonly projectManager: IProjectManager,
+    @inject("IPlatformAdapter") private readonly platform: IPlatformAdapter,
+    @inject("IPhpManager") private readonly phpManager: IPhpManager,
+    @inject("IProjectManager") private readonly projectManager: IProjectManager,
   ) {}
 
   async start(projectId: string, port?: number): Promise<DevServerStatus> {
     if (this.servers.has(projectId)) {
-      throw new Error('Dev server is already running for this project.');
+      throw new Error("Dev server is already running for this project.");
     }
 
     const project = this.projectManager.list().find((p) => p.id === projectId);
     if (!project) throw new Error(`Project ${projectId} not found.`);
 
-    const phpVersion = project.phpVersion || this.phpManager.getActiveVersion();
-    if (!phpVersion) throw new Error('No PHP version available.');
+    const resolved = this.resolvePhpBinary(project);
+    if (!resolved)
+      throw new Error(
+        "No PHP version available. Please install PHP via the PHP tab or add a .php-version file.",
+      );
 
-    const basePath = this.platform.getDefaultRuntimeInstallDir('php');
-    const phpBinary = join(basePath, phpVersion, 'php' + this.platform.getBinaryExtension());
-    if (!existsSync(phpBinary)) {
-      throw new Error(`PHP ${phpVersion} is not installed.`);
-    }
+    const { phpBinary, phpVersion } = resolved;
 
     const assignedPort = port || (await this.findFreePort());
     const docroot = project.path;
 
-    const child = spawn(phpBinary, [
-      '-S', `localhost:${assignedPort}`,
-      '-t', docroot,
-    ], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      phpBinary,
+      ["-S", `localhost:${assignedPort}`, "-t", docroot],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
 
     const entry: ServerEntry = {
       projectId,
@@ -78,7 +81,10 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
     };
 
     const onStdout = (data: Buffer) => {
-      const lines = data.toString().split('\n').filter((l) => l.trim());
+      const lines = data
+        .toString()
+        .split("\n")
+        .filter((l) => l.trim());
       for (const line of lines) {
         entry.logBuffer.push(line);
         if (entry.logBuffer.length > this.MAX_LOG_LINES) {
@@ -88,7 +94,10 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
     };
 
     const onStderr = (data: Buffer) => {
-      const lines = data.toString().split('\n').filter((l) => l.trim());
+      const lines = data
+        .toString()
+        .split("\n")
+        .filter((l) => l.trim());
       for (const line of lines) {
         entry.logBuffer.push(line);
         if (entry.logBuffer.length > this.MAX_LOG_LINES) {
@@ -107,9 +116,9 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
       }
     };
 
-    child.stdout?.on('data', onStdout);
-    child.stderr?.on('data', onStderr);
-    child.on('exit', onExit);
+    child.stdout?.on("data", onStdout);
+    child.stderr?.on("data", onStderr);
+    child.on("exit", onExit);
 
     entry.onStdout = onStdout;
     entry.onStderr = onStderr;
@@ -135,29 +144,38 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
     if (entry.process) {
       const child = entry.process;
 
-      child.stdout?.removeListener('data', entry.onStdout!);
-      child.stderr?.removeListener('data', entry.onStderr!);
-      child.removeListener('exit', entry.onExit!);
+      child.stdout?.removeListener("data", entry.onStdout!);
+      child.stderr?.removeListener("data", entry.onStderr!);
+      child.removeListener("exit", entry.onExit!);
 
-      if (child.pid && process.platform === 'win32') {
-        const { execFile } = await import('child_process');
-        const { promisify } = await import('util');
+      if (child.pid && process.platform === "win32") {
+        const { execFile } = await import("child_process");
+        const { promisify } = await import("util");
         const execFileAsync = promisify(execFile);
         try {
-          await execFileAsync('taskkill', ['/PID', String(child.pid), '/T', '/F']);
+          await execFileAsync("taskkill", [
+            "/PID",
+            String(child.pid),
+            "/T",
+            "/F",
+          ]);
         } catch {
-          try { child.kill('SIGTERM'); } catch {}
+          try {
+            child.kill("SIGTERM");
+          } catch {}
         }
       } else {
-        child.kill('SIGTERM');
+        child.kill("SIGTERM");
 
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
-            try { child.kill('SIGKILL'); } catch {}
+            try {
+              child.kill("SIGKILL");
+            } catch {}
             resolve();
           }, 5000);
 
-          child.on('exit', () => {
+          child.on("exit", () => {
             clearTimeout(timeout);
             resolve();
           });
@@ -218,6 +236,35 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
     }));
   }
 
+  private resolvePhpBinary(project: {
+    phpVersion?: string;
+  }): { phpBinary: string; phpVersion: string } | null {
+    const ext = this.platform.getBinaryExtension();
+    const basePath = this.platform.getDefaultRuntimeInstallDir("php");
+
+    if (project.phpVersion) {
+      const candidate = join(basePath, project.phpVersion, "php" + ext);
+      if (existsSync(candidate)) {
+        return { phpBinary: candidate, phpVersion: project.phpVersion };
+      }
+    }
+
+    const activeVersion = this.phpManager.getActiveVersion();
+    if (activeVersion) {
+      const candidate = join(basePath, activeVersion, "php" + ext);
+      if (existsSync(candidate)) {
+        return { phpBinary: candidate, phpVersion: activeVersion };
+      }
+    }
+
+    const systemPhp = this.phpManager.findPhpInPath();
+    if (systemPhp) {
+      return { phpBinary: systemPhp.binary, phpVersion: systemPhp.version };
+    }
+
+    return null;
+  }
+
   private findFreePort(startPort: number = 8080): Promise<number> {
     return new Promise((resolve, reject) => {
       let port = startPort;
@@ -225,14 +272,14 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
 
       function tryPort(): void {
         if (port > maxPort) {
-          return reject(new Error('No free ports available.'));
+          return reject(new Error("No free ports available."));
         }
 
         const server = createServer();
-        server.listen(port, '127.0.0.1', () => {
+        server.listen(port, "127.0.0.1", () => {
           server.close(() => resolve(port));
         });
-        server.on('error', () => {
+        server.on("error", () => {
           port++;
           tryPort();
         });

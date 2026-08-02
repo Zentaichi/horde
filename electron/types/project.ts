@@ -3,4 +3,5 @@ export interface Project {
   name: string;
   path: string;
   phpVersion?: string;
+  isPhpVersionInstalled?: boolean;
 }
