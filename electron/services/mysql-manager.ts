@@ -1,15 +1,22 @@
-import { join } from 'path';
-import { existsSync, readdirSync, mkdirSync } from 'fs';
-import { execFile, spawn, type ChildProcess } from 'child_process';
-import { promisify } from 'util';
-import { ensureDir, remove } from 'fs-extra';
-import { tmpdir } from 'os';
-import { randomUUID } from 'crypto';
-import { inject, injectable } from 'tsyringe';
-import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
-import type { IDatabaseEngine, ProgressCallback } from './interfaces/IDatabaseEngine';
-import type { DatabaseInstanceConfig, DatabaseInstanceStatus } from '../types/database';
-import { downloadFile } from '../utils/download';
+import { join } from "path";
+import { existsSync, readdirSync, mkdirSync } from "fs";
+import { writeFile, readFile } from "fs/promises";
+import { execFile, spawn, type ChildProcess } from "child_process";
+import { promisify } from "util";
+import { ensureDir, remove } from "fs-extra";
+import { tmpdir } from "os";
+import { randomUUID } from "crypto";
+import { inject, injectable } from "tsyringe";
+import type { IPlatformAdapter } from "../platform/IPlatformAdapter";
+import type {
+  IDatabaseEngine,
+  ProgressCallback,
+} from "./interfaces/IDatabaseEngine";
+import type {
+  DatabaseInstanceConfig,
+  DatabaseInstanceStatus,
+} from "../types/database";
+import { downloadFile } from "../utils/download";
 
 const execFileAsync = promisify(execFile);
 
@@ -18,22 +25,22 @@ interface InstanceEntry {
   process: ChildProcess | null;
 }
 
-const FALLBACK_VERSIONS = ['8.0.37', '8.0.36', '5.7.44'];
+const FALLBACK_VERSIONS = ["8.0.37", "8.0.36", "5.7.44"];
 
 @injectable()
 export class MySqlManager implements IDatabaseEngine {
-  readonly engine = 'mysql';
-  readonly displayName = 'MySQL';
+  readonly engine = "mysql";
+  readonly displayName = "MySQL";
 
   private readonly installDir: string;
   private readonly dataDir: string;
   private readonly instances = new Map<string, InstanceEntry>();
 
   constructor(
-    @inject('IPlatformAdapter') private readonly platform: IPlatformAdapter,
+    @inject("IPlatformAdapter") private readonly platform: IPlatformAdapter,
   ) {
-    this.installDir = this.platform.getDefaultRuntimeInstallDir('mysql');
-    this.dataDir = this.platform.getDefaultDatabaseDataDir('mysql');
+    this.installDir = this.platform.getDefaultRuntimeInstallDir("mysql");
+    this.dataDir = this.platform.getDefaultDatabaseDataDir("mysql");
     if (!existsSync(this.installDir)) {
       mkdirSync(this.installDir, { recursive: true });
     }
@@ -44,14 +51,15 @@ export class MySqlManager implements IDatabaseEngine {
 
   async listAvailable(): Promise<string[]> {
     try {
-      const url = this.platform.getDatabaseReleasesUrl('mysql');
+      const url = this.platform.getDatabaseReleasesUrl("mysql");
       const response = await fetch(url);
       if (response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('json')) {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("json")) {
           const data = await response.json();
           if (Array.isArray(data)) return data;
-          if (data?.versions && Array.isArray(data.versions)) return data.versions;
+          if (data?.versions && Array.isArray(data.versions))
+            return data.versions;
         }
       }
     } catch {
@@ -68,14 +76,17 @@ export class MySqlManager implements IDatabaseEngine {
     return Promise.resolve(versions);
   }
 
-  async download(version: string, onProgress?: ProgressCallback): Promise<void> {
+  async download(
+    version: string,
+    onProgress?: ProgressCallback,
+  ): Promise<void> {
     const versionDir = join(this.installDir, version);
     if (existsSync(versionDir)) {
       throw new Error(`MySQL ${version} is already installed.`);
     }
 
-    const url = this.platform.getDatabaseDownloadUrl('mysql', version);
-    const tempDir = join(tmpdir(), 'horde-mysql-downloads');
+    const url = this.platform.getDatabaseDownloadUrl("mysql", version);
+    const tempDir = join(tmpdir(), "horde-mysql-downloads");
     const zipPath = join(tempDir, `mysql-${version}.zip`);
 
     await ensureDir(tempDir);
@@ -105,9 +116,9 @@ export class MySqlManager implements IDatabaseEngine {
       }
     }
 
-    if (process.platform === 'win32') {
+    if (process.platform === "win32") {
       try {
-        await execFileAsync('taskkill', ['/F', '/IM', 'mysqld.exe']);
+        await execFileAsync("taskkill", ["/F", "/IM", "mysqld.exe"]);
       } catch {}
     }
 
@@ -116,7 +127,7 @@ export class MySqlManager implements IDatabaseEngine {
         await remove(versionDir);
         return;
       } catch (err: any) {
-        if (attempt === 4 || (err.code !== 'EPERM' && err.code !== 'EBUSY')) {
+        if (attempt === 4 || (err.code !== "EPERM" && err.code !== "EBUSY")) {
           throw err;
         }
         await new Promise((r) => setTimeout(r, 1500));
@@ -134,15 +145,20 @@ export class MySqlManager implements IDatabaseEngine {
       throw new Error(`MySQL ${config.version} is not installed.`);
     }
 
-    const mysqldPath = join(this.resolveBinDir(versionDir), 'mysqld' + this.platform.getBinaryExtension());
-
-    const datadir = config.datadir || join(
-      this.dataDir,
-      config.version,
-      'instances',
-      config.instanceId,
-      'data',
+    const mysqldPath = join(
+      this.resolveBinDir(versionDir),
+      "mysqld" + this.platform.getBinaryExtension(),
     );
+
+    const datadir =
+      config.datadir ||
+      join(
+        this.dataDir,
+        config.version,
+        "instances",
+        config.instanceId,
+        "data",
+      );
 
     if (existsSync(datadir)) {
       await remove(datadir);
@@ -150,7 +166,7 @@ export class MySqlManager implements IDatabaseEngine {
     await ensureDir(datadir);
 
     await execFileAsync(mysqldPath, [
-      '--initialize-insecure',
+      "--initialize-insecure",
       `--datadir=${datadir}`,
     ]);
 
@@ -171,18 +187,25 @@ export class MySqlManager implements IDatabaseEngine {
     }
 
     const versionDir = join(this.installDir, entry.config.version);
-    const mysqldPath = join(this.resolveBinDir(versionDir), 'mysqld' + this.platform.getBinaryExtension());
+    const mysqldPath = join(
+      this.resolveBinDir(versionDir),
+      "mysqld" + this.platform.getBinaryExtension(),
+    );
 
-    const child = spawn(mysqldPath, [
-      `--port=${entry.config.port}`,
-      `--datadir=${entry.config.datadir}`,
-      '--console',
-    ], {
-      stdio: 'ignore',
-      detached: false,
-    });
+    const child = spawn(
+      mysqldPath,
+      [
+        `--port=${entry.config.port}`,
+        `--datadir=${entry.config.datadir}`,
+        "--console",
+      ],
+      {
+        stdio: "ignore",
+        detached: false,
+      },
+    );
 
-    child.on('exit', (code) => {
+    child.on("exit", (code) => {
       const e = this.instances.get(instanceId);
       if (e) e.process = null;
     });
@@ -199,22 +222,26 @@ export class MySqlManager implements IDatabaseEngine {
     const child = entry.process;
     const pid = child.pid;
 
-    if (pid && process.platform === 'win32') {
+    if (pid && process.platform === "win32") {
       try {
-        await execFileAsync('taskkill', ['/PID', String(pid), '/T', '/F']);
+        await execFileAsync("taskkill", ["/PID", String(pid), "/T", "/F"]);
       } catch {
-        try { child.kill('SIGTERM'); } catch {}
+        try {
+          child.kill("SIGTERM");
+        } catch {}
       }
     } else {
-      child.kill('SIGTERM');
+      child.kill("SIGTERM");
 
       await new Promise<void>((resolve) => {
         const timeout = setTimeout(() => {
-          try { child.kill('SIGKILL'); } catch {}
+          try {
+            child.kill("SIGKILL");
+          } catch {}
           resolve();
         }, 5000);
 
-        child.on('exit', () => {
+        child.on("exit", () => {
           clearTimeout(timeout);
           resolve();
         });
@@ -242,6 +269,7 @@ export class MySqlManager implements IDatabaseEngine {
     return {
       instanceId,
       engine: entry.config.engine,
+      displayName: this.displayName,
       version: entry.config.version,
       port: entry.config.port,
       running,
@@ -256,6 +284,7 @@ export class MySqlManager implements IDatabaseEngine {
       results.push({
         instanceId,
         engine: entry.config.engine,
+        displayName: this.displayName,
         version: entry.config.version,
         port: entry.config.port,
         running,
@@ -290,68 +319,182 @@ export class MySqlManager implements IDatabaseEngine {
   async createDatabase(instanceId: string, name: string): Promise<void> {
     const entry = this.instances.get(instanceId);
     if (!entry) throw new Error(`Instance ${instanceId} not found.`);
-    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+    if (!entry.process || entry.process.killed)
+      throw new Error(`Instance ${instanceId} is not running.`);
 
     const versionDir = join(this.installDir, entry.config.version);
     const mysqlPath = this.resolveMySqlPath(versionDir);
 
     await execFileAsync(mysqlPath, [
-      '-u', 'root',
+      "-u",
+      "root",
       `--port=${entry.config.port}`,
-      '--protocol=tcp',
-      '-e', `CREATE DATABASE \`${name}\`;`,
+      "--protocol=tcp",
+      "-e",
+      `CREATE DATABASE \`${name}\`;`,
     ]);
   }
 
   async dropDatabase(instanceId: string, name: string): Promise<void> {
     const entry = this.instances.get(instanceId);
     if (!entry) throw new Error(`Instance ${instanceId} not found.`);
-    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+    if (!entry.process || entry.process.killed)
+      throw new Error(`Instance ${instanceId} is not running.`);
 
     const versionDir = join(this.installDir, entry.config.version);
     const mysqlPath = this.resolveMySqlPath(versionDir);
 
     await execFileAsync(mysqlPath, [
-      '-u', 'root',
+      "-u",
+      "root",
       `--port=${entry.config.port}`,
-      '--protocol=tcp',
-      '-e', `DROP DATABASE \`${name}\`;`,
+      "--protocol=tcp",
+      "-e",
+      `DROP DATABASE \`${name}\`;`,
     ]);
   }
 
   async listDatabases(instanceId: string): Promise<string[]> {
     const entry = this.instances.get(instanceId);
     if (!entry) throw new Error(`Instance ${instanceId} not found.`);
-    if (!entry.process || entry.process.killed) throw new Error(`Instance ${instanceId} is not running.`);
+    if (!entry.process || entry.process.killed)
+      throw new Error(`Instance ${instanceId} is not running.`);
 
     const versionDir = join(this.installDir, entry.config.version);
     const mysqlPath = this.resolveMySqlPath(versionDir);
 
     const { stdout } = await execFileAsync(mysqlPath, [
-      '-u', 'root',
+      "-u",
+      "root",
       `--port=${entry.config.port}`,
-      '--protocol=tcp',
-      '--skip-column-names',
-      '-e', 'SHOW DATABASES;',
+      "--protocol=tcp",
+      "--skip-column-names",
+      "-e",
+      "SHOW DATABASES;",
     ]);
 
     return stdout
-      .split('\n')
+      .split("\n")
       .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !['information_schema', 'mysql', 'performance_schema', 'sys'].includes(s));
+      .filter(
+        (s) =>
+          s.length > 0 &&
+          ![
+            "information_schema",
+            "mysql",
+            "performance_schema",
+            "sys",
+          ].includes(s),
+      );
+  }
+
+  async exportDatabase(
+    instanceId: string,
+    databaseName: string,
+    targetPath: string,
+  ): Promise<void> {
+    const entry = this.instances.get(instanceId);
+    if (!entry) throw new Error(`Instance ${instanceId} not found.`);
+    if (!entry.process || entry.process.killed)
+      throw new Error(`Instance ${instanceId} is not running.`);
+
+    const versionDir = join(this.installDir, entry.config.version);
+    const dumpExe = join(
+      this.resolveBinDir(versionDir),
+      "mysqldump" + this.platform.getBinaryExtension(),
+    );
+
+    const child = spawn(
+      dumpExe,
+      [
+        "-u",
+        "root",
+        `--port=${entry.config.port}`,
+        "--protocol=tcp",
+        "--single-transaction",
+        "--routines",
+        "--triggers",
+        databaseName,
+      ],
+      { stdio: ["ignore", "pipe", "pipe"] },
+    );
+
+    const chunks: Buffer[] = [];
+    child.stdout?.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+    await new Promise<void>((resolve, reject) => {
+      child.on("close", async (code) => {
+        if (code === 0) {
+          try {
+            await writeFile(targetPath, Buffer.concat(chunks));
+            resolve();
+          } catch (err) {
+            reject(new Error(`Failed to write dump file: ${err}`));
+          }
+        } else {
+          reject(new Error(`mysqldump exited with code ${code}`));
+        }
+      });
+      child.on("error", reject);
+    });
+  }
+
+  async importDatabase(
+    instanceId: string,
+    sourcePath: string,
+    databaseName: string,
+  ): Promise<void> {
+    const entry = this.instances.get(instanceId);
+    if (!entry) throw new Error(`Instance ${instanceId} not found.`);
+    if (!entry.process || entry.process.killed)
+      throw new Error(`Instance ${instanceId} is not running.`);
+
+    const versionDir = join(this.installDir, entry.config.version);
+    const mysqlPath = this.resolveMySqlPath(versionDir);
+
+    const fileContent = await readFile(sourcePath);
+
+    const child = spawn(
+      mysqlPath,
+      [
+        "-u",
+        "root",
+        `--port=${entry.config.port}`,
+        "--protocol=tcp",
+        databaseName,
+      ],
+      { stdio: ["pipe", "pipe", "pipe"] },
+    );
+
+    child.stdin!.write(fileContent);
+    child.stdin!.end();
+
+    await new Promise<void>((resolve, reject) => {
+      child.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`mysql import exited with code ${code}`));
+      });
+      child.on("error", reject);
+    });
   }
 
   private resolveBinDir(versionDir: string): string {
     const contents = readdirSync(versionDir, { withFileTypes: true });
     for (const entry of contents) {
-      if (entry.isDirectory() && entry.name.toLowerCase().startsWith('mysql-')) {
-        return join(versionDir, entry.name, 'bin');
+      if (
+        entry.isDirectory() &&
+        entry.name.toLowerCase().startsWith("mysql-")
+      ) {
+        return join(versionDir, entry.name, "bin");
       }
     }
-    return join(versionDir, 'bin');
+    return join(versionDir, "bin");
   }
 
   private resolveMySqlPath(versionDir: string): string {
-    return join(this.resolveBinDir(versionDir), 'mysql' + this.platform.getBinaryExtension());
+    return join(
+      this.resolveBinDir(versionDir),
+      "mysql" + this.platform.getBinaryExtension(),
+    );
   }
 }
