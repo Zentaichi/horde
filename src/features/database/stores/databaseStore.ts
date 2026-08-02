@@ -1,9 +1,13 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import type { DatabaseInstance, DatabaseVersion, DownloadProgress } from '@/shared/types/database';
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import type {
+  DatabaseInstance,
+  DatabaseVersion,
+  DownloadProgress,
+} from "@/shared/types/database";
 
-export const useDatabaseStore = defineStore('database', () => {
-  const engines = ref<string[]>([]);
+export const useDatabaseStore = defineStore("database", () => {
+  const engines = ref<{ engine: string; displayName: string }[]>([]);
   const availableVersions = ref<Record<string, string[]>>({});
   const installedVersions = ref<Record<string, string[]>>({});
   const instances = ref<DatabaseInstance[]>([]);
@@ -19,12 +23,17 @@ export const useDatabaseStore = defineStore('database', () => {
     return `${engine}/${version}`;
   }
 
+  function engineDisplayName(engine: string): string {
+    const entry = engines.value.find((e) => e.engine === engine);
+    return entry?.displayName ?? engine;
+  }
+
   async function fetchEngines() {
     clearError();
     try {
       engines.value = await window.electronAPI.databases.listEngines();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to fetch engines';
+      error.value = e instanceof Error ? e.message : "Failed to fetch engines";
       console.error(e);
     }
   }
@@ -32,9 +41,11 @@ export const useDatabaseStore = defineStore('database', () => {
   async function fetchAvailable(engine: string) {
     clearError();
     try {
-      availableVersions.value[engine] = await window.electronAPI.databases.listAvailable(engine);
+      availableVersions.value[engine] =
+        await window.electronAPI.databases.listAvailable(engine);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : `Failed to fetch ${engine} versions`;
+      error.value =
+        e instanceof Error ? e.message : `Failed to fetch ${engine} versions`;
       console.error(e);
     }
   }
@@ -42,9 +53,13 @@ export const useDatabaseStore = defineStore('database', () => {
   async function fetchInstalled(engine: string) {
     clearError();
     try {
-      installedVersions.value[engine] = await window.electronAPI.databases.listInstalled(engine);
+      installedVersions.value[engine] =
+        await window.electronAPI.databases.listInstalled(engine);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : `Failed to fetch installed ${engine} versions`;
+      error.value =
+        e instanceof Error
+          ? e.message
+          : `Failed to fetch installed ${engine} versions`;
       console.error(e);
     }
   }
@@ -54,7 +69,8 @@ export const useDatabaseStore = defineStore('database', () => {
     try {
       instances.value = await window.electronAPI.databases.listInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to fetch instances';
+      error.value =
+        e instanceof Error ? e.message : "Failed to fetch instances";
       console.error(e);
     }
   }
@@ -74,7 +90,10 @@ export const useDatabaseStore = defineStore('database', () => {
       await window.electronAPI.databases.download(engine, version);
       await fetchInstalled(engine);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : `Failed to download ${engine} ${version}`;
+      error.value =
+        e instanceof Error
+          ? e.message
+          : `Failed to download ${engine} ${version}`;
       console.error(e);
     } finally {
       unsubscribe();
@@ -101,7 +120,8 @@ export const useDatabaseStore = defineStore('database', () => {
       });
       await fetchInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to initialize instance';
+      error.value =
+        e instanceof Error ? e.message : "Failed to initialize instance";
       console.error(e);
     } finally {
       loading.value = false;
@@ -114,7 +134,7 @@ export const useDatabaseStore = defineStore('database', () => {
       await window.electronAPI.databases.start(instanceId);
       await fetchInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to start instance';
+      error.value = e instanceof Error ? e.message : "Failed to start instance";
       console.error(e);
     }
   }
@@ -125,7 +145,7 @@ export const useDatabaseStore = defineStore('database', () => {
       await window.electronAPI.databases.stop(instanceId);
       await fetchInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to stop instance';
+      error.value = e instanceof Error ? e.message : "Failed to stop instance";
       console.error(e);
     }
   }
@@ -136,7 +156,8 @@ export const useDatabaseStore = defineStore('database', () => {
       await window.electronAPI.databases.removeInstance(instanceId);
       await fetchInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to remove instance';
+      error.value =
+        e instanceof Error ? e.message : "Failed to remove instance";
       console.error(e);
     }
   }
@@ -148,7 +169,10 @@ export const useDatabaseStore = defineStore('database', () => {
       await fetchInstalled(engine);
       await fetchInstances();
     } catch (e) {
-      error.value = e instanceof Error ? e.message : `Failed to uninstall ${engine} ${version}`;
+      error.value =
+        e instanceof Error
+          ? e.message
+          : `Failed to uninstall ${engine} ${version}`;
       console.error(e);
     }
   }
@@ -162,7 +186,8 @@ export const useDatabaseStore = defineStore('database', () => {
     try {
       await window.electronAPI.databases.createDatabase(instanceId, name);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to create database';
+      error.value =
+        e instanceof Error ? e.message : "Failed to create database";
       throw e;
     }
   }
@@ -172,7 +197,7 @@ export const useDatabaseStore = defineStore('database', () => {
     try {
       await window.electronAPI.databases.dropDatabase(instanceId, name);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to drop database';
+      error.value = e instanceof Error ? e.message : "Failed to drop database";
       throw e;
     }
   }
@@ -182,8 +207,46 @@ export const useDatabaseStore = defineStore('database', () => {
     try {
       return await window.electronAPI.databases.listDatabases(instanceId);
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to list databases';
+      error.value = e instanceof Error ? e.message : "Failed to list databases";
       return [];
+    }
+  }
+
+  async function exportDatabase(
+    instanceId: string,
+    databaseName: string,
+    targetPath: string,
+  ) {
+    clearError();
+    try {
+      await window.electronAPI.databases.exportDatabase(
+        instanceId,
+        databaseName,
+        targetPath,
+      );
+    } catch (e) {
+      error.value =
+        e instanceof Error ? e.message : "Failed to export database";
+      throw e;
+    }
+  }
+
+  async function importDatabase(
+    instanceId: string,
+    sourcePath: string,
+    databaseName: string,
+  ) {
+    clearError();
+    try {
+      await window.electronAPI.databases.importDatabase(
+        instanceId,
+        sourcePath,
+        databaseName,
+      );
+    } catch (e) {
+      error.value =
+        e instanceof Error ? e.message : "Failed to import database";
+      throw e;
     }
   }
 
@@ -210,6 +273,9 @@ export const useDatabaseStore = defineStore('database', () => {
     createDatabase,
     dropDatabase,
     fetchDatabases,
+    exportDatabase,
+    importDatabase,
+    engineDisplayName,
     progressKey,
   };
 });

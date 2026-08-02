@@ -1,8 +1,12 @@
-import type { PhpVersion, DownloadProgress } from '@/shared/types/php';
-import type { DatabaseVersion, DatabaseInstance, DownloadProgress as DbDownloadProgress } from '@/shared/types/database';
-import type { Project } from '@/shared/types/project';
-import type { DevServerStatus } from '@/shared/types/devserver';
-import type { ExtensionInfo } from '@/shared/types/extensions';
+import type { PhpVersion, DownloadProgress } from "@/shared/types/php";
+import type {
+  DatabaseVersion,
+  DatabaseInstance,
+  DownloadProgress as DbDownloadProgress,
+} from "@/shared/types/database";
+import type { Project } from "@/shared/types/project";
+import type { DevServerStatus } from "@/shared/types/devserver";
+import type { ExtensionInfo } from "@/shared/types/extensions";
 
 export {};
 
@@ -22,7 +26,7 @@ declare global {
         ) => () => void;
       };
       databases: {
-        listEngines: () => Promise<string[]>;
+        listEngines: () => Promise<{ engine: string; displayName: string }[]>;
         listAvailable: (engine: string) => Promise<string[]>;
         listInstalled: (engine: string) => Promise<string[]>;
         download: (engine: string, version: string) => Promise<void>;
@@ -44,6 +48,16 @@ declare global {
         createDatabase: (instanceId: string, name: string) => Promise<void>;
         dropDatabase: (instanceId: string, name: string) => Promise<void>;
         listDatabases: (instanceId: string) => Promise<string[]>;
+        exportDatabase: (
+          instanceId: string,
+          databaseName: string,
+          targetPath: string,
+        ) => Promise<void>;
+        importDatabase: (
+          instanceId: string,
+          sourcePath: string,
+          databaseName: string,
+        ) => Promise<void>;
         onDownloadProgress: (
           engine: string,
           version: string,
@@ -68,7 +82,10 @@ declare global {
         getStatus: (projectId: string) => Promise<DevServerStatus | null>;
         listAll: () => Promise<DevServerStatus[]>;
         getLogs: (projectId: string, tail?: number) => Promise<string[]>;
-        onLog: (projectId: string, callback: (logs: string[]) => void) => () => void;
+        onLog: (
+          projectId: string,
+          callback: (logs: string[]) => void,
+        ) => () => void;
       };
       extensions: {
         list: (phpVersion: string) => Promise<ExtensionInfo[]>;
@@ -83,6 +100,13 @@ declare global {
         toggleBoot: (enabled: boolean) => Promise<void>;
       };
       openDirectory: (path: string) => Promise<void>;
+      showSaveDialog: (options: {
+        defaultPath?: string;
+        filters?: { name: string; extensions: string[] }[];
+      }) => Promise<string | null>;
+      showOpenDialog: (options: {
+        filters?: { name: string; extensions: string[] }[];
+      }) => Promise<string | null>;
     };
   }
 }
