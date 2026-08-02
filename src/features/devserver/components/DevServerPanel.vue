@@ -1,50 +1,43 @@
 <template>
   <div class="inline-flex items-center gap-1">
-    <Button
-      v-if="!server"
-      variant="outline"
-      size="xs"
-      @click="onStart"
-      :disabled="loading"
-    >
-      <Play class="size-3 mr-1" />
-      Serve
-    </Button>
-    <span
-      v-if="!server && storeError"
-      class="text-xs text-destructive italic max-w-48 truncate"
-      :title="storeError"
-    >
-      {{ storeError }}
-    </span>
-    <template v-else>
-      <div class="flex items-center gap-1">
-        <Circle
-          :class="
-            server?.running
-              ? 'text-green-500 fill-green-500'
-              : 'text-muted-foreground'
-          "
-          class="size-2"
-        />
-        <span class="text-xs text-muted-foreground">:{{ server?.port }}</span>
-      </div>
+    <template v-if="!server">
       <Button
-        variant="ghost"
-        size="icon-xs"
-        class="text-muted-foreground hover:text-destructive"
+        variant="outline"
+        size="xs"
+        @click="onStart"
+        :disabled="loading"
+        title="Start PHP development server"
+      >
+        <Play class="size-3 mr-1" />
+        Serve
+      </Button>
+      <span
+        v-if="storeError"
+        class="text-xs text-destructive italic max-w-48 truncate"
+        :title="storeError"
+        >{{ storeError }}</span
+      >
+    </template>
+    <template v-else>
+      <Button
+        variant="outline"
+        size="xs"
         @click="onStop"
         :disabled="loading"
+        title="Stop development server"
+        class="hover:text-destructive"
       >
-        <Square class="size-3" />
+        <Square class="size-3 mr-1" />
+        Stop
       </Button>
       <Button
-        variant="ghost"
-        size="icon-xs"
-        class="text-muted-foreground"
+        variant="outline"
+        size="xs"
         @click="showLogs = !showLogs"
+        title="Toggle server logs"
       >
-        <Terminal class="size-3" />
+        <Terminal class="size-3 mr-1" />
+        Logs
       </Button>
     </template>
   </div>
@@ -60,12 +53,11 @@ import { ref, computed, onMounted } from "vue";
 import { useDevServerStore } from "@/features/devserver/stores/devServerStore";
 import { storeToRefs } from "pinia";
 import { Button } from "@/shared/ui/button";
-import { Play, Square, Terminal, Circle } from "@lucide/vue";
+import { Play, Square, Terminal } from "@lucide/vue";
 import LogViewer from "./LogViewer.vue";
 
 const props = defineProps<{
   projectId: string;
-  projectName: string;
 }>();
 
 const store = useDevServerStore();

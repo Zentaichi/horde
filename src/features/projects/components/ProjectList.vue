@@ -30,6 +30,14 @@
           >
             Not installed
           </Badge>
+          <Badge
+            v-if="serverMap[project.id] !== undefined"
+            variant="outline"
+            class="text-xs text-green-600 dark:text-green-400 border-green-500/30"
+          >
+            <Circle class="size-1.5 fill-current inline-block mr-1" />
+            localhost:{{ serverMap[project.id] }}
+          </Badge>
         </div>
       </div>
 
@@ -67,12 +75,13 @@
           <FolderOpen class="size-3 mr-1" />
           Open
         </Button>
-        <DevServerPanel :project-id="project.id" :project-name="project.name" />
+        <DevServerPanel :project-id="project.id" />
         <div class="flex-1" />
         <Button
           variant="ghost"
           size="icon-xs"
           class="text-muted-foreground hover:text-destructive"
+          title="Remove project"
           @click="$emit('remove', project.id)"
         >
           <Trash2 class="size-3.5" />
@@ -87,11 +96,12 @@ import type { Project } from "@/shared/types/project";
 import { useProjectStore } from "@/features/projects/stores/projectStore";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { RefreshCw, FolderOpen, Trash2 } from "@lucide/vue";
+import { RefreshCw, FolderOpen, Trash2, Circle } from "@lucide/vue";
 import DevServerPanel from "@/features/devserver/components/DevServerPanel.vue";
 
 defineProps<{
   projects: Project[];
+  serverMap: Record<string, number>;
 }>();
 
 defineEmits<{
