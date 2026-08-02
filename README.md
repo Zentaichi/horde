@@ -1,28 +1,34 @@
 # Horde — Local PHP & Database Version Manager
 
-**Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
+**Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL, MariaDB, and PostgreSQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** Phase 2 complete — Windows-only; macOS and Linux planned for Phase 6.
+> **Status:** Phase 3 complete — Windows-only; macOS and Linux planned for Phase 6.
 
 ## Features
 
 ### PHP Management
+
 - Download, list, globally switch, uninstall PHP versions (Windows binaries)
 - Per-project PHP version via `.php-version` file (read-only discovery)
 - Extension manager UI (list and toggle bundled extensions)
 - `php.ini` editing for extension toggles
 
 ### Database Management
-- Download portable MySQL versions, create per-instance data directories
-- Start/stop/restart MySQL instances on configurable ports
+
+- Download portable MySQL, MariaDB, and PostgreSQL versions, create per-instance data directories
+- Start/stop/restart database instances on configurable ports (multiple engines simultaneously)
 - Create/delete databases via UI
-- Multiple simultaneous instances across different versions/ports
+- SQL import/export (dump/restore) per database
+- Engine selector for cross-engine management
+- Multiple simultaneous instances across different engines, versions, and ports
 
 ### Dev Server
+
 - Built-in `php -S` development server per project
 - Real-time log streaming
 
 ### Platform & Developer Experience
+
 - Dashboard with status cards (PHP, Databases, Projects, Dev Servers)
 - System tray with service status indicators and quick actions
 - Auto-start services on Windows boot
@@ -30,10 +36,8 @@
 - Settings persistence via SQLite
 - `IPlatformAdapter` abstraction — macOS/Linux is one class per platform
 
-## Planned (Phase 3+)
+## Planned (Phase 4+)
 
-- PostgreSQL and MariaDB engine support
-- Database import/export (SQL dump)
 - Full `php.ini` text editor
 - Built-in HTTPS via `mkcert` + Caddy reverse proxy
 - Local domain mapping & hosts file integration
@@ -66,13 +70,15 @@ electron/               # Main process
   services/
     interfaces/         # Shared contracts
       IPhpManager.ts    # PHP service contract
-      IDatabaseEngine.ts # Multi-engine database contract (18 methods)
+      IDatabaseEngine.ts # Multi-engine database contract (20 methods)
       IProjectManager.ts # Project CRUD + .php-version scanning
       IDevServerManager.ts # Built-in dev server lifecycle
       IExtensionManager.ts # Bundled extension listing and toggling
       IServiceRegistry.ts  # Unified service status for tray/auto-start
     php-manager.ts      # Implements IPhpManager
-    mysql-manager.ts    # Implements IDatabaseEngine
+    mysql-manager.ts    # Implements IDatabaseEngine (MySQL)
+    pg-manager.ts       # Implements IDatabaseEngine (PostgreSQL)
+    mariadb-manager.ts  # Implements IDatabaseEngine (MariaDB)
     project-manager.ts  # Implements IProjectManager
     dev-server-manager.ts # Implements IDevServerManager + IServiceProvider
     extension-manager.ts  # Implements IExtensionManager
@@ -109,17 +115,17 @@ src/                    # Renderer process
 
 Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
 
-| ADR | Topic |
-|-----|-------|
-| [ADR-0001](docs/adr/0001-feature-sliced-design.md) | Feature Sliced Design for frontend |
-| [ADR-0002](docs/adr/0002-service-layer-di-strategy.md) | Service layer & tsyringe DI |
-| [ADR-0003](docs/adr/0003-multi-engine-database-abstraction.md) | Engine-agnostic database IPC |
-| [ADR-0004](docs/adr/0004-platform-abstraction-boundary.md) | Platform abstraction (IPlatformAdapter) |
-| [ADR-0005](docs/adr/0005-download-utility-consolidation.md) | Single canonical download utility |
+| ADR                                                            | Topic                                                 |
+| -------------------------------------------------------------- | ----------------------------------------------------- |
+| [ADR-0001](docs/adr/0001-feature-sliced-design.md)             | Feature Sliced Design for frontend                    |
+| [ADR-0002](docs/adr/0002-service-layer-di-strategy.md)         | Service layer & tsyringe DI                           |
+| [ADR-0003](docs/adr/0003-multi-engine-database-abstraction.md) | Engine-agnostic database IPC                          |
+| [ADR-0004](docs/adr/0004-platform-abstraction-boundary.md)     | Platform abstraction (IPlatformAdapter)               |
+| [ADR-0005](docs/adr/0005-download-utility-consolidation.md)    | Single canonical download utility                     |
 | [ADR-0006](docs/adr/0006-project-management-scope-boundary.md) | Project model scope boundary & dev server integration |
-| [ADR-0007](docs/adr/0007-service-registry-abstraction.md) | Unified process status via ServiceRegistry |
-| [ADR-0008](docs/adr/0008-settings-store-consolidation.md) | SettingsStore as canonical persistence layer |
-| [ADR-0009](docs/adr/0009-extension-manager-scope-boundary.md) | Extension manager (bundled only, no PECL) |
+| [ADR-0007](docs/adr/0007-service-registry-abstraction.md)      | Unified process status via ServiceRegistry            |
+| [ADR-0008](docs/adr/0008-settings-store-consolidation.md)      | SettingsStore as canonical persistence layer          |
+| [ADR-0009](docs/adr/0009-extension-manager-scope-boundary.md)  | Extension manager (bundled only, no PECL)             |
 
 Full architecture: [docs/architecture.md](docs/architecture.md)
 
