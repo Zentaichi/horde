@@ -9,6 +9,8 @@ import type { IPhpManager } from "./services/interfaces/IPhpManager";
 import { PhpManager } from "./services/php-manager";
 import type { IDatabaseEngine } from "./services/interfaces/IDatabaseEngine";
 import { MySqlManager } from "./services/mysql-manager";
+import { MariaDbManager } from "./services/mariadb-manager";
+import { PgManager } from "./services/pg-manager";
 import { DatabaseRegistry } from "./services/database-registry";
 import { SettingsStore } from "./services/settings-store";
 import { ServiceRegistry } from "./services/service-registry";
@@ -44,6 +46,14 @@ function registerE2EServices() {
     "IDatabaseEngine:mysql",
     MockMySqlManager,
   );
+  container.registerSingleton<IDatabaseEngine>(
+    "IDatabaseEngine:mariadb",
+    MockMySqlManager as any,
+  );
+  container.registerSingleton<IDatabaseEngine>(
+    "IDatabaseEngine:postgres",
+    MockMySqlManager as any,
+  );
   container.registerSingleton<IProjectManager>(
     "IProjectManager",
     MockProjectManager,
@@ -78,6 +88,14 @@ if (isE2E) {
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:mysql",
     MySqlManager,
+  );
+  container.registerSingleton<IDatabaseEngine>(
+    "IDatabaseEngine:mariadb",
+    MariaDbManager,
+  );
+  container.registerSingleton<IDatabaseEngine>(
+    "IDatabaseEngine:postgres",
+    PgManager,
   );
   container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
   container.registerSingleton(SettingsStore, SettingsStore);
@@ -139,8 +157,16 @@ app.whenReady().then(async () => {
   const mysqlManager = container.resolve<IDatabaseEngine>(
     "IDatabaseEngine:mysql",
   );
+  const mariadbManager = container.resolve<IDatabaseEngine>(
+    "IDatabaseEngine:mariadb",
+  );
+  const pgManager = container.resolve<IDatabaseEngine>(
+    "IDatabaseEngine:postgres",
+  );
   const databaseRegistry = container.resolve(DatabaseRegistry);
   databaseRegistry.register(mysqlManager);
+  databaseRegistry.register(mariadbManager);
+  databaseRegistry.register(pgManager);
 
   const devServerManager =
     container.resolve<IDevServerManager>("IDevServerManager");
