@@ -60,7 +60,7 @@ const runningInstances = computed(() =>
         >
           <Circle class="size-1.5 text-green-500 fill-green-500" />
           <span class="font-medium"
-            >{{ inst.engine || "MySQL" }} {{ inst.version }}</span
+            >{{ inst.displayName || inst.engine }} {{ inst.version }}</span
           >
           <span class="text-muted-foreground">@ :{{ inst.port }}</span>
         </div>

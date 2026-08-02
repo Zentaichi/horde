@@ -7,14 +7,20 @@
         <CardContent class="p-4">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="font-semibold">MySQL {{ version }}</span>
-              <Badge v-if="isInstalled(version)" variant="secondary">Installed</Badge>
+              <span class="font-semibold"
+                >{{ store.engineDisplayName(engine) }} {{ version }}</span
+              >
+              <Badge v-if="isInstalled(version)" variant="secondary"
+                >Installed</Badge
+              >
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
               <template v-if="isInstalled(version)">
                 <template v-if="confirmingUninstall === version">
-                  <span class="text-xs text-destructive font-medium">Are you sure?</span>
+                  <span class="text-xs text-destructive font-medium"
+                    >Are you sure?</span
+                  >
                   <Button
                     variant="destructive"
                     size="sm"
@@ -82,14 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
-import { useDatabaseStore } from '../stores/databaseStore';
-import { storeToRefs } from 'pinia';
-import { Card, CardContent } from '@/shared/ui/card';
-import { Badge } from '@/shared/ui/badge';
-import { Button } from '@/shared/ui/button';
-import { FolderOpen } from '@lucide/vue';
-import ProgressBar from '@/shared/ui/ProgressBar.vue';
+import { ref, reactive, watch } from "vue";
+import { useDatabaseStore } from "../stores/databaseStore";
+import { storeToRefs } from "pinia";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { FolderOpen } from "@lucide/vue";
+import ProgressBar from "@/shared/ui/ProgressBar.vue";
 
 const store = useDatabaseStore();
 const { downloadProgress, installedVersions } = storeToRefs(store);
@@ -100,7 +106,7 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'download', version: string): void;
+  (e: "download", version: string): void;
 }>();
 
 const confirmingUninstall = ref<string | null>(null);
@@ -125,7 +131,10 @@ watch(
 );
 
 function isDownloading(version: string) {
-  return downloadProgress.value[store.progressKey(props.engine, version)] !== undefined;
+  return (
+    downloadProgress.value[store.progressKey(props.engine, version)] !==
+    undefined
+  );
 }
 
 function isInstalled(version: string) {
