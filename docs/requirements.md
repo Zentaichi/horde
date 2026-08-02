@@ -73,7 +73,6 @@ Cross-platform support (macOS, Linux) is a stated goal but not in scope for the 
 
 ## Out of Scope (Current Phase)
 
-- PostgreSQL, MariaDB, or other database engines
 - Built-in HTTPS via mkcert, Caddy/Nginx reverse proxy
 - Full `php.ini` text editor (extension toggling modifies ini programmatically)
 - Site/domain mapping and hosts file integration

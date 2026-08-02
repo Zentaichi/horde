@@ -55,11 +55,11 @@ These refactors address architectural risks identified during Phase 1 review. Ea
 
 ## Phase 3 — Full Database Suite
 
-- [ ] PostgreSQL engine (implements `IDatabaseEngine` — additive, zero refactors of Phase 1/2 code)
-- [ ] MariaDB engine (same)
-- [ ] Database import/export (SQL dump)
-- [ ] Multiple simultaneous database instances (IPC already supports `instanceId` from Phase 1)
-- [ ] Cross-engine status dashboard
+- [x] PostgreSQL engine (implements `IDatabaseEngine` — additive, zero refactors of Phase 1/2 code)
+- [x] MariaDB engine (same)
+- [x] Database import/export (SQL dump)
+- [x] Multiple simultaneous database instances (IPC already supports `instanceId` from Phase 1)
+- [x] Cross-engine status dashboard
 
 > **Reality check:** If `IDatabaseEngine` is implemented in Phase 1, Phase 3 reduces to writing two new `implements IDatabaseEngine` classes plus UI. If skipped, Phase 3 includes a costly refactor of the MySQL IPC layer and renderer bindings.
 
@@ -91,7 +91,7 @@ These refactors address architectural risks identified during Phase 1 review. Ea
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-24 (Phase 2 complete — projects, dev server, extensions, system tray, auto-start, E2E tests all delivered)
+> Updated last: 2026-07-31 (Phase 3 complete — PostgreSQL, MariaDB, import/export, cross-engine dashboard)
 
 ## Phase 2.5 — Branding & Identity
 
