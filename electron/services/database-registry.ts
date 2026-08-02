@@ -1,14 +1,20 @@
-import { inject, injectable, singleton } from 'tsyringe';
-import type { IDatabaseEngine } from './interfaces/IDatabaseEngine';
-import type { DatabaseInstanceConfig, DatabaseInstanceStatus } from '../types/database';
-import type { IServiceProvider, ServiceStatus } from './interfaces/IServiceRegistry';
-import { SettingsStore } from './settings-store';
+import { inject, injectable, singleton } from "tsyringe";
+import type { IDatabaseEngine } from "./interfaces/IDatabaseEngine";
+import type {
+  DatabaseInstanceConfig,
+  DatabaseInstanceStatus,
+} from "../types/database";
+import type {
+  IServiceProvider,
+  ServiceStatus,
+} from "./interfaces/IServiceRegistry";
+import { SettingsStore } from "./settings-store";
 
 @injectable()
 @singleton()
 export class DatabaseRegistry implements IServiceProvider {
-  readonly providerId = 'mysql';
-  readonly displayName = 'MySQL';
+  readonly providerId = "mysql";
+  readonly displayName = "MySQL";
   private readonly engines = new Map<string, IDatabaseEngine>();
 
   constructor(
@@ -19,8 +25,11 @@ export class DatabaseRegistry implements IServiceProvider {
     this.engines.set(engine.engine, engine);
   }
 
-  listEngines(): string[] {
-    return Array.from(this.engines.keys());
+  listEngines(): { engine: string; displayName: string }[] {
+    return Array.from(this.engines.entries()).map(([key, eng]) => ({
+      engine: key,
+      displayName: eng.displayName,
+    }));
   }
 
   findEngine(engine: string): IDatabaseEngine {
