@@ -1,6 +1,13 @@
-import type { DatabaseInstanceConfig, DatabaseInstanceStatus } from '../../types/database';
+import type {
+  DatabaseInstanceConfig,
+  DatabaseInstanceStatus,
+} from "../../types/database";
 
-export type ProgressCallback = (info: { percent: number; transferredBytes: number; totalBytes: number }) => void;
+export type ProgressCallback = (info: {
+  percent: number;
+  transferredBytes: number;
+  totalBytes: number;
+}) => void;
 
 export interface IDatabaseEngine {
   readonly engine: string;
@@ -25,4 +32,15 @@ export interface IDatabaseEngine {
   createDatabase(instanceId: string, name: string): Promise<void>;
   dropDatabase(instanceId: string, name: string): Promise<void>;
   listDatabases(instanceId: string): Promise<string[]>;
+
+  exportDatabase(
+    instanceId: string,
+    databaseName: string,
+    targetPath: string,
+  ): Promise<void>;
+  importDatabase(
+    instanceId: string,
+    sourcePath: string,
+    databaseName: string,
+  ): Promise<void>;
 }

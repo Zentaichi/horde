@@ -10,6 +10,7 @@ export interface DatabaseInstanceConfig {
 export interface DatabaseInstanceStatus {
   instanceId: string;
   engine: string;
+  displayName: string;
   version: string;
   port: number;
   running: boolean;
