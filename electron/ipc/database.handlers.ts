@@ -1,36 +1,30 @@
-import { ipcMain, shell } from 'electron';
-import { container } from 'tsyringe';
-import type { IPlatformAdapter } from '../platform/IPlatformAdapter';
-import type { IDatabaseEngine } from '../services/interfaces/IDatabaseEngine';
-import { DatabaseRegistry } from '../services/database-registry';
-import type { DatabaseInstanceConfig } from '../types/database';
+import { ipcMain, shell } from "electron";
+import { container } from "tsyringe";
+import type { IPlatformAdapter } from "../platform/IPlatformAdapter";
+import type { IDatabaseEngine } from "../services/interfaces/IDatabaseEngine";
+import { DatabaseRegistry } from "../services/database-registry";
+import type { DatabaseInstanceConfig } from "../types/database";
 
 export function registerDatabaseHandlers() {
   const registry = container.resolve(DatabaseRegistry);
-  const platform = container.resolve<IPlatformAdapter>('IPlatformAdapter');
+  const platform = container.resolve<IPlatformAdapter>("IPlatformAdapter");
 
-  ipcMain.handle('databases:list-engines', async () => {
+  ipcMain.handle("databases:list-engines", async () => {
     return registry.listEngines();
   });
 
-  ipcMain.handle(
-    'databases:list-available',
-    async (_event, engine: string) => {
-      const inst = registry.findEngine(engine);
-      return await inst.listAvailable();
-    },
-  );
+  ipcMain.handle("databases:list-available", async (_event, engine: string) => {
+    const inst = registry.findEngine(engine);
+    return await inst.listAvailable();
+  });
+
+  ipcMain.handle("databases:list-installed", async (_event, engine: string) => {
+    const inst = registry.findEngine(engine);
+    return await inst.listInstalled();
+  });
 
   ipcMain.handle(
-    'databases:list-installed',
-    async (_event, engine: string) => {
-      const inst = registry.findEngine(engine);
-      return await inst.listInstalled();
-    },
-  );
-
-  ipcMain.handle(
-    'databases:download',
+    "databases:download",
     async (event, engine: string, version: string) => {
       const inst = registry.findEngine(engine);
       const progressChannel = `database:download-progress-${engine}-${version}`;
@@ -42,52 +36,40 @@ export function registerDatabaseHandlers() {
   );
 
   ipcMain.handle(
-    'databases:initialize',
+    "databases:initialize",
     async (_event, config: DatabaseInstanceConfig) => {
       await registry.createInstance(config);
     },
   );
 
-  ipcMain.handle(
-    'databases:start',
-    async (_event, instanceId: string) => {
-      const inst = await registry.resolveEngineByInstance(instanceId);
-      await inst.start(instanceId);
-    },
-  );
+  ipcMain.handle("databases:start", async (_event, instanceId: string) => {
+    const inst = await registry.resolveEngineByInstance(instanceId);
+    await inst.start(instanceId);
+  });
+
+  ipcMain.handle("databases:stop", async (_event, instanceId: string) => {
+    const inst = await registry.resolveEngineByInstance(instanceId);
+    await inst.stop(instanceId);
+  });
+
+  ipcMain.handle("databases:get-status", async (_event, instanceId: string) => {
+    const inst = await registry.resolveEngineByInstance(instanceId);
+    return await inst.getStatus(instanceId);
+  });
+
+  ipcMain.handle("databases:list-instances", async () => {
+    return await registry.listAllInstances();
+  });
 
   ipcMain.handle(
-    'databases:stop',
-    async (_event, instanceId: string) => {
-      const inst = await registry.resolveEngineByInstance(instanceId);
-      await inst.stop(instanceId);
-    },
-  );
-
-  ipcMain.handle(
-    'databases:get-status',
-    async (_event, instanceId: string) => {
-      const inst = await registry.resolveEngineByInstance(instanceId);
-      return await inst.getStatus(instanceId);
-    },
-  );
-
-  ipcMain.handle(
-    'databases:list-instances',
-    async () => {
-      return await registry.listAllInstances();
-    },
-  );
-
-  ipcMain.handle(
-    'databases:remove-instance',
+    "databases:remove-instance",
     async (_event, instanceId: string) => {
       await registry.deleteInstance(instanceId);
     },
   );
 
   ipcMain.handle(
-    'databases:uninstall',
+    "databases:uninstall",
     async (_event, engine: string, version: string) => {
       const inst = registry.findEngine(engine);
       await inst.uninstall(version);
@@ -95,10 +77,10 @@ export function registerDatabaseHandlers() {
   );
 
   ipcMain.handle(
-    'databases:open-install-dir',
+    "databases:open-install-dir",
     async (_event, engine: string, version: string) => {
       const installDir = platform.getDefaultRuntimeInstallDir(engine);
-      const { join } = require('path');
+      const { join } = require("path");
       const versionDir = join(installDir, version);
       const result = await shell.openPath(versionDir);
       if (result) throw new Error(result);
@@ -106,7 +88,7 @@ export function registerDatabaseHandlers() {
   );
 
   ipcMain.handle(
-    'databases:create-database',
+    "databases:create-database",
     async (_event, instanceId: string, name: string) => {
       const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.createDatabase(instanceId, name);
@@ -114,7 +96,7 @@ export function registerDatabaseHandlers() {
   );
 
   ipcMain.handle(
-    'databases:drop-database',
+    "databases:drop-database",
     async (_event, instanceId: string, name: string) => {
       const inst = await registry.resolveEngineByInstance(instanceId);
       await inst.dropDatabase(instanceId, name);
@@ -122,10 +104,36 @@ export function registerDatabaseHandlers() {
   );
 
   ipcMain.handle(
-    'databases:list-databases',
+    "databases:list-databases",
     async (_event, instanceId: string) => {
       const inst = await registry.resolveEngineByInstance(instanceId);
       return await inst.listDatabases(instanceId);
+    },
+  );
+
+  ipcMain.handle(
+    "databases:export",
+    async (
+      _event,
+      instanceId: string,
+      databaseName: string,
+      targetPath: string,
+    ) => {
+      const inst = await registry.resolveEngineByInstance(instanceId);
+      await inst.exportDatabase(instanceId, databaseName, targetPath);
+    },
+  );
+
+  ipcMain.handle(
+    "databases:import",
+    async (
+      _event,
+      instanceId: string,
+      sourcePath: string,
+      databaseName: string,
+    ) => {
+      const inst = await registry.resolveEngineByInstance(instanceId);
+      await inst.importDatabase(instanceId, sourcePath, databaseName);
     },
   );
 }
