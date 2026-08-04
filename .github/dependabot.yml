@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    versioning-strategy: "auto"
+    groups:
+      vue:
+        patterns:
+          - "vue"
+          - "vue-router"
+          - "@vue/test-utils"
+          - "vue-tsc"
+      vite:
+        patterns:
+          - "vite"
+          - "vitest"
+          - "@vitejs/plugin-vue"
+      electron:
+        patterns:
+          - "electron"
+          - "electron-builder"
+          - "@electron/rebuild"
+          - "playwright"
+          - "@playwright/test"
+    ignore:
+      # better-sqlite3 is rebuilt against Electron's ABI via postinstall; keep updates deliberate.
+      - dependency-name: "better-sqlite3"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"

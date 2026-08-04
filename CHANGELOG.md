@@ -2,7 +2,11 @@
 
 All notable changes to Horde are documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [docs/versioning.md](docs/versioning.md) for the release process and the milestone-based tagging convention.
+
 ## [Unreleased]
+
+## [0.5.0] - 2026-08-04
 
 ### Added
 
@@ -17,6 +21,7 @@ All notable changes to Horde are documented in this file.
 - Engine selector dropdown on Database page for cross-engine management
 - Import/Export buttons per database in InstanceList UI
 - `showSaveDialog` / `showOpenDialog` IPC methods for file selection dialogs
+- Branding (Phase 2.5): skull logo component, system tray icon, dormant/risen status language, brand guidelines in `docs/branding.md`
 
 ### Changed
 
@@ -29,3 +34,46 @@ All notable changes to Horde are documented in this file.
 
 - Frontend `defineProps` changed to `const props = defineProps` in `InstanceList.vue` for script-level engine access
 - Mock `MySqlManager` and unit tests updated for new interface methods and types
+- Dev server `v-if`/`v-else` pairing and port badge placement
+- Resolve system PATH for PHP; add scan/serve feedback; stop dev server on project removal
+- Disable automatic publishing in build script (CI-owned release publishing)
+- Cross-platform `emnapi` dependency entries in `package-lock.json`
+
+## [0.4.0] - 2026-07-24
+
+### Added
+
+- `ProjectManager` + `projects:*` IPC — per-project PHP via `.php-version` (read-only discovery)
+- `DevServerManager` + `devserver:*` IPC — built-in `php -S` server with real-time log streaming
+- `ExtensionManager` + `extensions:*` IPC — bundled extension listing and enable/disable via `php.ini`
+- System tray with quick actions and service status indicators
+- Auto-start services on Windows boot (via `IPlatformAdapter.createAutoStartEntry`)
+- `IServiceProvider` interface + `ServiceRegistry` aggregator for unified service status
+- E2E test infrastructure (Playwright + mocked main-process services behind `HORDE_E2E_TEST` gate)
+
+### Changed
+
+- `SettingsStore` consolidated as the canonical persistence layer (settings, instances, projects)
+- Shared `downloadFile()` consolidated into a single download utility
+- `eslint-plugin-boundaries` + Feature Sliced Design import rules enforced in `src/`
+- Phase 2 adapter methods (`resolveExtensionFileName`, auto-start entries) added to `IPlatformAdapter`
+
+## [0.3.0] - 2026-07-14
+
+### Added
+
+- Project scaffolding: Electron + Vue 3 + TypeScript + Tailwind + Feature Sliced Design
+- PHP version management — list, download (with progress: speed/ETA/bytes), extract, global switch, uninstall (Windows)
+- `IPlatformAdapter` abstraction + `Win32PlatformAdapter` (PATH via registry/`setx`, ZIP extraction, URL routing)
+- MySQL portable download, initialize, start/stop/restart, and per-instance data directories
+- Engine-agnostic `databases:*` IPC contract and multi-engine `DatabaseRegistry`
+- Create/delete/list databases via UI
+- SQLite settings persistence with instance state survival across restarts
+- Dashboard with real-time status widgets (PHP + Databases)
+- Light/dark theme toggle
+- tsyringe DI container wiring service layer
+- Unit tests (Vitest), GitHub Actions CI building the Windows installer
+
+## [Unreleased] Notes
+
+> Only the sections above are released. Changes land in `[Unreleased]` until the next `v<minor>` tag.

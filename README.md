@@ -1,8 +1,26 @@
 # Horde — Local PHP & Database Version Manager
 
+[![CI](https://github.com/Zentaichi/horde/actions/workflows/ci.yml/badge.svg)](https://github.com/Zentaichi/horde/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Zentaichi/horde?sort=semver)](https://github.com/Zentaichi/horde/releases)
+[![License: ISC](https://img.shields.io/github/license/Zentaichi/horde)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)](package.json)
+
 **Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL, MariaDB, and PostgreSQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** Phase 3 complete — Windows-only; macOS and Linux planned for Phase 6.
+> **Status:** Phase 3 complete — Windows-only; macOS and Linux planned for Phase 6. Latest release: **v0.5.0**.
+
+## Table of Contents
+
+- [Features](#features)
+- [Planned (Phase 4+)](#planned-phase-4)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Quick Start (Development)](#quick-start-development)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -54,6 +72,14 @@ Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - **Main Process:** Node.js, better-sqlite3, execa, electron-log, tsyringe (DI)
 - **Testing:** Vitest, Playwright
 - **CI/CD:** GitHub Actions (Windows build + installer)
+
+## Installation
+
+Download the latest installer from the [Releases page](https://github.com/Zentaichi/horde/releases):
+
+- **`Horde Setup <version>.exe`** — NSIS installer for Windows 10/11 (64-bit). Choose "Install for all users" to add Horde to the Start menu; the installer lets you pick an installation directory.
+
+PHP binaries, database engines (MySQL, MariaDB, PostgreSQL), and instance data are downloaded/created on first use into your user profile via `%APPDATA%/Horde`, keeping the installer small. No admin rights are required for day-to-day use (except optional global PATH changes).
 
 ## Architecture
 
@@ -152,3 +178,25 @@ npm test
 # Build Windows installer
 npm run build
 ```
+
+## Documentation
+
+| Document                                                       | Contents                                            |
+| -------------------------------------------------------------- | --------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)                   | Full architecture, service boundaries, IPC contract |
+| [docs/roadmap.md](docs/roadmap.md)                             | Phase-by-phase feature roadmap                      |
+| [docs/requirements.md](docs/requirements.md)                   | Functional & non-functional requirements            |
+| [docs/feature-parity.md](docs/feature-parity.md)               | Feature comparison against Herd / DBngin            |
+| [docs/adr/](docs/adr/)                                         | Architectural Decision Records                      |
+| [docs/branding.md](docs/branding.md)                           | Brand guidelines (logo, palette, typography)        |
+| [docs/versioning.md](docs/versioning.md)                       | Semver scheme & release process                     |
+| [docs/pre-release-checklist.md](docs/pre-release-checklist.md) | Pre-release verification checklist                  |
+| [CHANGELOG.md](CHANGELOG.md)                                   | Release history                                     |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions, and the PR checklist. All contributors must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately per [SECURITY.md](SECURITY.md).
+
+## License
+
+Horde is released under the [ISC License](LICENSE).

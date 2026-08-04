@@ -1,9 +1,36 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 dist-electron/
 release/
 out/
 test-results/
+coverage/
+.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Environment
 .env
+.env.*
+!.env.example
+
+# Logs
 *.log
+electron-log/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local / scratch
+*.local
+session-*.md

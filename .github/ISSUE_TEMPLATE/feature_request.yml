@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a feature or improvement for Horde
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature. Check the [roadmap](https://github.com/Zentaichi/horde/blob/master/docs/roadmap.md)
+        and [feature parity](https://github.com/Zentaichi/horde/blob/master/docs/feature-parity.md) first — your idea may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve, or what workflow does it improve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you'd like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or alternative designs you've thought about.
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - PHP management
+        - Database management (MySQL / MariaDB / PostgreSQL)
+        - Dev server / projects
+        - Platform / cross-platform
+        - UI / UX / branding
+        - Tooling / CI / packaging
+    validations:
+      required: true

@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-electron
+release
+out
+test-results
+coverage
+*.tsbuildinfo
+package-lock.json

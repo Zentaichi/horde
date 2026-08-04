@@ -1,8 +1,19 @@
 {
   "name": "horde",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Your local PHP & DB manager",
   "main": "dist-electron/electron/main.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zentaichi/horde.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Zentaichi/horde/issues"
+  },
+  "homepage": "https://github.com/Zentaichi/horde#readme",
   "scripts": {
     "predev": "tsc -p tsconfig.node.json",
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -15,8 +26,8 @@
     "test": "vitest run",
     "pretest:e2e": "npm run build:renderer && npm run build:electron",
     "test:e2e": "playwright test",
-    "lint": "eslint src/",
-    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint src/ electron/ tests/",
+    "typecheck": "vue-tsc --noEmit && tsc -p tsconfig.node.json",
     "prepare": "husky"
   },
   "keywords": [],
