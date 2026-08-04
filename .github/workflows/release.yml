@@ -54,7 +54,7 @@ jobs:
       - name: Extract changelog section for this version
         run: node .github/scripts/release-notes.mjs
       - run: dir
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: |
             Horde Setup *.exe
