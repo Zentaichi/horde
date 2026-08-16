@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
+  <PageContainer class="flex flex-col">
+    <div class="shrink-0 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Projects</h1>
         <p class="text-sm text-muted-foreground">
@@ -24,7 +24,7 @@
 
     <div
       v-if="error"
-      class="flex items-start justify-between gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+      class="shrink-0 flex items-start justify-between gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm"
     >
       <p class="flex-1">{{ error }}</p>
       <button
@@ -36,14 +36,16 @@
       </button>
     </div>
 
-    <ProjectList
-      :projects="projects"
-      :server-map="serverMap"
-      @scan="onScan"
-      @open-dir="store.openProjectDir"
-      @remove="onRemove"
-    />
-  </div>
+    <div class="flex-1 min-h-0 overflow-y-auto pr-1 overscroll-contain">
+      <ProjectList
+        :projects="projects"
+        :server-map="serverMap"
+        @scan="onScan"
+        @open-dir="store.openProjectDir"
+        @remove="onRemove"
+      />
+    </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -53,6 +55,7 @@ import { useDevServerStore } from "@/features/devserver/stores/devServerStore";
 import { storeToRefs } from "pinia";
 import { RefreshCw, X } from "@lucide/vue";
 import { Button } from "@/shared/ui/button";
+import PageContainer from "@/shared/ui/PageContainer.vue";
 import ProjectList from "@/features/projects/components/ProjectList.vue";
 import AddProjectDialog from "@/features/projects/components/AddProjectDialog.vue";
 import ScaffoldDialog from "@/features/scaffold/components/ScaffoldDialog.vue";

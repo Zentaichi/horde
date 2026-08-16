@@ -1,6 +1,6 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
+  <PageContainer class="flex flex-col">
+    <div class="shrink-0 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Database Manager</h1>
         <p class="text-sm text-muted-foreground">
@@ -15,7 +15,7 @@
 
     <div
       v-if="error"
-      class="flex items-start justify-between gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+      class="shrink-0 flex items-start justify-between gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm"
     >
       <p class="flex-1">{{ error }}</p>
       <button
@@ -27,9 +27,9 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="space-y-3">
-        <div class="flex items-center gap-2">
+    <div class="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+      <div class="flex flex-col min-w-0 min-h-0 gap-3">
+        <div class="shrink-0 flex items-center gap-2">
           <select
             v-model="selectedEngine"
             class="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm"
@@ -56,22 +56,26 @@
             />
           </div>
         </div>
-        <VersionList
-          v-if="selectedEngine"
-          :engine="selectedEngine"
-          :versions="filteredAvailable"
-          @download="onDownload"
-        />
-        <p v-else class="text-sm text-muted-foreground">
-          Select an engine from the dropdown above.
-        </p>
+        <div class="flex-1 min-h-0 overflow-y-auto pr-1 overscroll-contain">
+          <VersionList
+            v-if="selectedEngine"
+            :engine="selectedEngine"
+            :versions="filteredAvailable"
+            @download="onDownload"
+          />
+          <p v-else class="text-sm text-muted-foreground">
+            Select an engine from the dropdown above.
+          </p>
+        </div>
       </div>
 
-      <div>
-        <InstanceList v-if="selectedEngine" :engine="selectedEngine" />
+      <div class="flex flex-col min-w-0 min-h-0">
+        <div class="flex-1 min-h-0 overflow-y-auto pr-1 overscroll-contain">
+          <InstanceList v-if="selectedEngine" :engine="selectedEngine" />
+        </div>
       </div>
     </div>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +84,7 @@ import { useDatabaseStore } from "@/features/database/stores/databaseStore";
 import { storeToRefs } from "pinia";
 import { RefreshCw, Search, X } from "@lucide/vue";
 import { Button } from "@/shared/ui/button";
+import PageContainer from "@/shared/ui/PageContainer.vue";
 import VersionList from "@/features/database/components/VersionList.vue";
 import InstanceList from "@/features/database/components/InstanceList.vue";
 
