@@ -5,9 +5,9 @@ import {
   type ServerResponse,
 } from "http";
 import { homedir } from "os";
-import { join } from "path";
+import { join, dirname } from "path";
 import { randomUUID } from "crypto";
-import { remove, writeFile } from "fs-extra";
+import { ensureDir, remove, writeFile } from "fs-extra";
 import { app } from "electron";
 import type { ControlHandlers } from "./control-commands";
 
@@ -58,6 +58,7 @@ export class ControlServer {
       });
     });
 
+    await ensureDir(dirname(controlFilePath()));
     await writeFile(
       controlFilePath(),
       JSON.stringify({ port: this.port, token: this.token }),
