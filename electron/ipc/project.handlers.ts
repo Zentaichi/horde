@@ -2,11 +2,13 @@ import { ipcMain, dialog, shell } from "electron";
 import { container } from "tsyringe";
 import type { IProjectManager } from "../services/interfaces/IProjectManager";
 import type { IDevServerManager } from "../services/interfaces/IDevServerManager";
+import type { ISiteManager } from "../services/interfaces/ISiteManager";
 
 export function registerProjectHandlers() {
   const projectManager = container.resolve<IProjectManager>("IProjectManager");
   const devServerManager =
     container.resolve<IDevServerManager>("IDevServerManager");
+  const siteManager = container.resolve<ISiteManager>("ISiteManager");
 
   ipcMain.handle("projects:list", () => {
     return projectManager.list();
@@ -27,7 +29,7 @@ export function registerProjectHandlers() {
 
   ipcMain.handle("projects:remove", async (_event, projectId: string) => {
     await devServerManager.stop(projectId);
-    projectManager.remove(projectId);
+    await siteManager.removeProject(projectId);
   });
 
   ipcMain.handle("projects:scan-php-version", (_event, projectId: string) => {
