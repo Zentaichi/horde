@@ -31,7 +31,25 @@ import {
   registerAutoStartHandlers,
   startAutoServices,
 } from "./ipc/autostart.handlers";
+import { registerMkcertHandlers } from "./ipc/mkcert.handlers";
+import { registerProxyHandlers } from "./ipc/proxy.handlers";
+import { registerSiteHandlers } from "./ipc/sites.handlers";
+import { registerScaffoldHandlers } from "./ipc/scaffold.handlers";
+import { registerCliHandlers } from "./ipc/cli.handlers";
 import { createTray } from "./tray";
+
+import type { IMkcertManager } from "./services/interfaces/IMkcertManager";
+import { MkcertManager } from "./services/mkcert-manager";
+import type { ICaddyManager } from "./services/interfaces/ICaddyManager";
+import { CaddyManager } from "./services/caddy-manager";
+import type { ISiteManager } from "./services/interfaces/ISiteManager";
+import { SiteManager } from "./services/site-manager";
+import type { IScaffolder } from "./services/interfaces/IScaffolder";
+import { ScaffolderManager } from "./services/scaffolder-manager";
+import { LaravelScaffolder } from "./services/scaffolders/laravel-scaffolder";
+import { SymfonyScaffolder } from "./services/scaffolders/symfony-scaffolder";
+import { buildControlHandlers } from "./services/control-commands";
+import { ControlServer } from "./services/control-server";
 
 import { MockPhpManager } from "./services/__mocks__/mock-php-manager";
 import { MockMySqlManager } from "./services/__mocks__/mock-mysql-manager";
@@ -39,33 +57,44 @@ import { MockProjectManager } from "./services/__mocks__/mock-project-manager";
 import { MockDevServerManager } from "./services/__mocks__/mock-dev-server-manager";
 import { MockExtensionManager } from "./services/__mocks__/mock-extension-manager";
 import { MockPlatformAdapter } from "./services/__mocks__/mock-platform-adapter";
+import { MockMkcertManager } from "./services/__mocks__/mock-mkcert-manager";
+import { MockCaddyManager } from "./services/__mocks__/mock-caddy-manager";
+import { MockSiteManager } from "./services/__mocks__/mock-site-manager";
+import { MockScaffolderManager } from "./services/__mocks__/mock-scaffolder-manager";
 
 function registerE2EServices() {
   container.registerSingleton<IPhpManager>("IPhpManager", MockPhpManager);
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:mysql",
-    MockMySqlManager,
+    MockMySqlManager
   );
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:mariadb",
-    MockMySqlManager as any,
+    MockMySqlManager as any
   );
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:postgres",
-    MockMySqlManager as any,
+    MockMySqlManager as any
   );
   container.registerSingleton<IProjectManager>(
     "IProjectManager",
-    MockProjectManager,
+    MockProjectManager
   );
   container.registerSingleton<IDevServerManager>(
     "IDevServerManager",
-    MockDevServerManager,
+    MockDevServerManager
   );
   container.registerSingleton<IExtensionManager>(
     "IExtensionManager",
-    MockExtensionManager,
+    MockExtensionManager
   );
+  container.registerSingleton<IMkcertManager>(
+    "IMkcertManager",
+    MockMkcertManager
+  );
+  container.registerSingleton<ICaddyManager>("ICaddyManager", MockCaddyManager);
+  container.registerSingleton<ISiteManager>("ISiteManager", MockSiteManager);
+  container.register(ScaffolderManager, { useClass: MockScaffolderManager });
 }
 
 const isE2E = process.env.HORDE_E2E_TEST === "1";
@@ -74,7 +103,7 @@ if (isE2E) {
   registerE2EServices();
   container.registerSingleton<IPlatformAdapter>(
     "IPlatformAdapter",
-    MockPlatformAdapter,
+    MockPlatformAdapter
   );
   container.registerSingleton(SettingsStore, SettingsStore);
   container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
@@ -82,36 +111,48 @@ if (isE2E) {
 } else {
   container.registerSingleton<IPlatformAdapter>(
     "IPlatformAdapter",
-    Win32PlatformAdapter,
+    Win32PlatformAdapter
   );
   container.registerSingleton<IPhpManager>("IPhpManager", PhpManager);
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:mysql",
-    MySqlManager,
+    MySqlManager
   );
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:mariadb",
-    MariaDbManager,
+    MariaDbManager
   );
   container.registerSingleton<IDatabaseEngine>(
     "IDatabaseEngine:postgres",
-    PgManager,
+    PgManager
   );
   container.registerSingleton(DatabaseRegistry, DatabaseRegistry);
   container.registerSingleton(SettingsStore, SettingsStore);
   container.registerSingleton(ServiceRegistry, ServiceRegistry);
   container.registerSingleton<IProjectManager>(
     "IProjectManager",
-    ProjectManager,
+    ProjectManager
   );
   container.registerSingleton<IDevServerManager>(
     "IDevServerManager",
-    DevServerManager,
+    DevServerManager
   );
   container.registerSingleton<IExtensionManager>(
     "IExtensionManager",
-    ExtensionManager,
+    ExtensionManager
   );
+  container.registerSingleton<IMkcertManager>("IMkcertManager", MkcertManager);
+  container.registerSingleton<ICaddyManager>("ICaddyManager", CaddyManager);
+  container.registerSingleton<ISiteManager>("ISiteManager", SiteManager);
+  container.registerSingleton<IScaffolder>(
+    "IScaffolder:laravel",
+    LaravelScaffolder
+  );
+  container.registerSingleton<IScaffolder>(
+    "IScaffolder:symfony",
+    SymfonyScaffolder
+  );
+  container.registerSingleton(ScaffolderManager, ScaffolderManager);
 }
 
 let mainWindow: BrowserWindow | null = null;
@@ -138,7 +179,7 @@ function createWindow(): void {
     mainWindow.loadURL("http://localhost:5173");
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, "..", "..", "dist", "renderer", "index.html"),
+      path.join(__dirname, "..", "..", "dist", "renderer", "index.html")
     );
   }
 }
@@ -153,15 +194,20 @@ app.whenReady().then(async () => {
   registerProjectHandlers();
   registerExtensionHandlers();
   registerAutoStartHandlers();
+  registerMkcertHandlers();
+  registerProxyHandlers();
+  registerSiteHandlers();
+  registerScaffoldHandlers();
+  registerCliHandlers();
 
   const mysqlManager = container.resolve<IDatabaseEngine>(
-    "IDatabaseEngine:mysql",
+    "IDatabaseEngine:mysql"
   );
   const mariadbManager = container.resolve<IDatabaseEngine>(
-    "IDatabaseEngine:mariadb",
+    "IDatabaseEngine:mariadb"
   );
   const pgManager = container.resolve<IDatabaseEngine>(
-    "IDatabaseEngine:postgres",
+    "IDatabaseEngine:postgres"
   );
   const databaseRegistry = container.resolve(DatabaseRegistry);
   databaseRegistry.register(mysqlManager);
@@ -174,8 +220,26 @@ app.whenReady().then(async () => {
   const serviceRegistry = container.resolve(ServiceRegistry);
   serviceRegistry.registerProvider(databaseRegistry);
   serviceRegistry.registerProvider(
-    devServerManager as unknown as IServiceProvider,
+    devServerManager as unknown as IServiceProvider
   );
+
+  const caddyManager = container.resolve<ICaddyManager>("ICaddyManager");
+  serviceRegistry.registerProvider(caddyManager as unknown as IServiceProvider);
+
+  const scaffolderManager = container.resolve(ScaffolderManager);
+  scaffolderManager.register(
+    container.resolve<IScaffolder>("IScaffolder:laravel")
+  );
+  scaffolderManager.register(
+    container.resolve<IScaffolder>("IScaffolder:symfony")
+  );
+
+  const controlServer = new ControlServer(buildControlHandlers());
+  await controlServer.start();
+  app.on("will-quit", () => {
+    void controlServer.stop();
+  });
+
   await serviceRegistry.restoreAll();
   log.info("Database instances restored from store");
 
