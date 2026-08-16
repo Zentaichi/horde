@@ -1,7 +1,7 @@
 {
   "name": "horde",
-  "version": "0.5.0",
-  "description": "Your local PHP & DB manager",
+  "version": "0.6.0",
+  "description": "Your local PHP, database & site manager",
   "main": "dist-electron/electron/main.js",
   "engines": {
     "node": ">=24"

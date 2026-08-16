@@ -7,7 +7,7 @@
 
 **Horde** is a desktop application that lets you install, switch, and manage multiple PHP versions alongside portable MySQL, MariaDB, and PostgreSQL servers — all without Docker. Think Laravel Herd + DBngin, built for Windows first with cross-platform architecture from day one.
 
-> **Status:** Phase 3 complete — Windows-only; macOS and Linux planned for Phase 6. Latest release: **v0.5.0**.
+> **Status:** Phase 4 complete — local sites, HTTPS, quick-create, and a CLI companion. Windows-only; macOS and Linux planned for Phase 6. Latest release: **v0.6.0**.
 
 ## Table of Contents
 
@@ -45,21 +45,30 @@
 - Built-in `php -S` development server per project
 - Real-time log streaming
 
+### Sites & HTTPS
+
+- Map local domains to projects (`acme.test` → project directory) with hosts file management (backup/rollback, conflict detection)
+- Caddy reverse proxy serving each site through the project's dev server
+- Built-in HTTPS via mkcert with a single wildcard `*.test` certificate
+
+### Scaffolding & CLI
+
+- Project quick-create from Laravel and Symfony templates (composer-based, additive registry)
+- `horde` CLI companion: `horde php-version [path]`, `horde projects`, `horde sites`, `horde servers`
+
 ### Platform & Developer Experience
 
 - Dashboard with status cards (PHP, Databases, Projects, Dev Servers)
 - System tray with service status indicators and quick actions
 - Auto-start services on Windows boot
 - Light/dark theme toggle
-- Settings persistence via SQLite
+- Settings persistence via SQLite (with schema migrations)
 - `IPlatformAdapter` abstraction — macOS/Linux is one class per platform
 
-## Planned (Phase 4+)
+## Planned (Phase 5+)
 
 - Full `php.ini` text editor
-- Built-in HTTPS via `mkcert` + Caddy reverse proxy
-- Local domain mapping & hosts file integration
-- CLI companion tool (`horde` command)
+- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n
 - **macOS & Linux support** (Phase 6 — architecture seeded in Phase 1)
 
 Full feature tracking: [docs/feature-parity.md](docs/feature-parity.md)
@@ -70,6 +79,8 @@ Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - **Desktop Shell:** Electron (main + renderer)
 - **Renderer:** Vue 3 (Composition API, TypeScript), Pinia, TailwindCSS, shadcn-vue
 - **Main Process:** Node.js, better-sqlite3, execa, electron-log, tsyringe (DI)
+- **Proxy & HTTPS:** Caddy (managed reverse proxy), mkcert (local CA + wildcard certs)
+- **Scaffolding:** composer (system or bundled `composer.phar`)
 - **Testing:** Vitest, Playwright
 - **CI/CD:** GitHub Actions (Windows build + installer)
 
@@ -101,6 +112,10 @@ electron/               # Main process
       IDevServerManager.ts # Built-in dev server lifecycle
       IExtensionManager.ts # Bundled extension listing and toggling
       IServiceRegistry.ts  # Unified service status for tray/auto-start
+      IMkcertManager.ts    # HTTPS via mkcert (wildcard *.test)
+      ICaddyManager.ts     # Reverse proxy lifecycle
+      ISiteManager.ts      # Domain/hosts/Caddy/cert orchestration
+      IScaffolder.ts       # Project quick-create templates
     php-manager.ts      # Implements IPhpManager
     mysql-manager.ts    # Implements IDatabaseEngine (MySQL)
     pg-manager.ts       # Implements IDatabaseEngine (PostgreSQL)
@@ -111,6 +126,16 @@ electron/               # Main process
     database-registry.ts  # Multi-engine instance tracker + IServiceProvider
     service-registry.ts   # Aggregated service status
     settings-store.ts     # SQLite persistence (settings, instances, projects)
+    mkcert-manager.ts     # HTTPS certificates
+    caddy-manager.ts      # Reverse proxy (IServiceProvider)
+    site-manager.ts       # Sites/domains orchestrator
+    hosts-file.ts         # Hosts management with backup/conflict detection
+    scaffolder-manager.ts # Quick-create registry
+    control-server.ts     # Loopback RPC endpoint for the CLI
+  cli/
+    main.ts               # Hidden Electron CLI entry
+    commands/             # Pure, transport-agnostic command layer
+    transports/           # CliClient over the app's ControlServer
   ipc/
     php.handlers.ts     # php:* channels
     database.handlers.ts # databases:* channels
@@ -118,6 +143,11 @@ electron/               # Main process
     devserver.handlers.ts # devserver:* channels
     extensions.handlers.ts # extensions:* channels
     settings.handlers.ts  # settings:get/set
+    mkcert.handlers.ts    # mkcert:* channels
+    proxy.handlers.ts     # proxy:* channels
+    sites.handlers.ts     # sites:* channels
+    scaffold.handlers.ts  # scaffold:* channels
+    cli.handlers.ts       # cli:install/uninstall
     autostart.handlers.ts # autostart:* channels
   types/
     php.ts              # PhpVersion, DownloadProgress
@@ -125,33 +155,44 @@ electron/               # Main process
     project.ts          # Project
     devserver.ts        # DevServerStatus
     extension.ts        # ExtensionInfo
+    site.ts             # Site, SiteStatus, MkcertStatus
+    proxy.ts            # ProxyRoute, ProxyStatus
+    scaffold.ts         # ScaffoldOptions, ScaffoldTemplate
 
 src/                    # Renderer process
   app/                  # Global setup, router, App shell
-  pages/                # Route-level components (Dashboard, PHP, Databases, Projects)
+  pages/                # Route-level components (Dashboard, PHP, Databases, Projects, Sites)
   features/
     php/                # PHP feature module (store, components)
     database/           # Database feature module (store, components)
     projects/           # Project management (store, components)
     devserver/          # Dev server (store, components)
     extensions/         # Extension manager (store, components)
+    sites/              # Site/domain management (store)
+    scaffold/           # Project quick-create (store, components)
   widgets/              # Cross-feature compositions (status cards: PHP, DB, Projects, Dev Server)
   shared/               # Reusable UI kit (shadcn-vue), types, composables
 ```
 
 Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
 
-| ADR                                                            | Topic                                                 |
-| -------------------------------------------------------------- | ----------------------------------------------------- |
-| [ADR-0001](docs/adr/0001-feature-sliced-design.md)             | Feature Sliced Design for frontend                    |
-| [ADR-0002](docs/adr/0002-service-layer-di-strategy.md)         | Service layer & tsyringe DI                           |
-| [ADR-0003](docs/adr/0003-multi-engine-database-abstraction.md) | Engine-agnostic database IPC                          |
-| [ADR-0004](docs/adr/0004-platform-abstraction-boundary.md)     | Platform abstraction (IPlatformAdapter)               |
-| [ADR-0005](docs/adr/0005-download-utility-consolidation.md)    | Single canonical download utility                     |
-| [ADR-0006](docs/adr/0006-project-management-scope-boundary.md) | Project model scope boundary & dev server integration |
-| [ADR-0007](docs/adr/0007-service-registry-abstraction.md)      | Unified process status via ServiceRegistry            |
-| [ADR-0008](docs/adr/0008-settings-store-consolidation.md)      | SettingsStore as canonical persistence layer          |
-| [ADR-0009](docs/adr/0009-extension-manager-scope-boundary.md)  | Extension manager (bundled only, no PECL)             |
+| ADR                                                                        | Topic                                                 |
+| -------------------------------------------------------------------------- | ----------------------------------------------------- |
+| [ADR-0001](docs/adr/0001-feature-sliced-design.md)                         | Feature Sliced Design for frontend                    |
+| [ADR-0002](docs/adr/0002-service-layer-di-strategy.md)                     | Service layer & tsyringe DI                           |
+| [ADR-0003](docs/adr/0003-multi-engine-database-abstraction.md)             | Engine-agnostic database IPC                          |
+| [ADR-0004](docs/adr/0004-platform-abstraction-boundary.md)                 | Platform abstraction (IPlatformAdapter)               |
+| [ADR-0005](docs/adr/0005-download-utility-consolidation.md)                | Single canonical download utility                     |
+| [ADR-0006](docs/adr/0006-project-management-scope-boundary.md)             | Project model scope boundary & dev server integration |
+| [ADR-0007](docs/adr/0007-service-registry-abstraction.md)                  | Unified process status via ServiceRegistry            |
+| [ADR-0008](docs/adr/0008-settings-store-consolidation.md)                  | SettingsStore as canonical persistence layer          |
+| [ADR-0009](docs/adr/0009-extension-manager-scope-boundary.md)              | Extension manager (bundled only, no PECL)             |
+| [ADR-0010](docs/adr/0010-sqlite-migration-mechanism.md)                    | SQLite schema migrations                              |
+| [ADR-0011](docs/adr/0011-privileged-operation-elevation.md)                | Privileged-operation elevation                        |
+| [ADR-0012](docs/adr/0012-site-domain-management-single-source-of-truth.md) | Site/domain management & HTTPS                        |
+| [ADR-0013](docs/adr/0013-caddy-reverse-proxy-as-managed-service.md)        | Caddy reverse proxy                                   |
+| [ADR-0014](docs/adr/0014-scaffolder-registry.md)                           | Project quick-create registry                         |
+| [ADR-0015](docs/adr/0015-cli-companion-architecture.md)                    | CLI companion architecture                            |
 
 Full architecture: [docs/architecture.md](docs/architecture.md)
 

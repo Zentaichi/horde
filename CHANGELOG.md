@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-17
+
 ### Added
 
 - Local domain mapping and hosts file integration (`SiteManager` + `HostsFile`) — per-project `.test` domains with backup/rollback, conflict detection, and stale-entry cleanup on project removal
