@@ -49,14 +49,33 @@ electron/               # Main process
       IDevServerManager.ts
       IExtensionManager.ts
       IServiceRegistry.ts
+      IMkcertManager.ts
+      ICaddyManager.ts
+      ISiteManager.ts
+      IScaffolder.ts
     php-manager.ts      # Implements IPhpManager
-    mysql-manager.ts    # Implements IDatabaseEngine
+    mysql-manager.ts    # Implements IDatabaseEngine (MySQL)
     project-manager.ts  # Implements IProjectManager
     dev-server-manager.ts # Implements IDevServerManager + IServiceProvider
     extension-manager.ts  # Implements IExtensionManager
     database-registry.ts  # Multi-engine instance tracker + IServiceProvider
     service-registry.ts   # Aggregated service status for tray/auto-start
-    settings-store.ts     # SQLite persistence (settings, instances, projects)
+    settings-store.ts     # SQLite persistence (settings, instances, projects) + migrations
+    mkcert-manager.ts     # Implements IMkcertManager (wildcard *.test HTTPS)
+    caddy-manager.ts      # Implements ICaddyManager + IServiceProvider (reverse proxy)
+    site-manager.ts       # Implements ISiteManager (domain/hosts/Caddy/cert orchestrator)
+    hosts-file.ts         # Read-modify-write hosts management with backup/conflict detection
+    scaffolder-manager.ts # IScaffolder registry (project quick-create)
+    scaffolders/
+      composer-scaffolder.ts  # Shared composer-based scaffold logic
+      laravel-scaffolder.ts   # Laravel template
+      symfony-scaffolder.ts   # Symfony template (+ webapp recipe)
+    control-server.ts     # Loopback JSON-RPC endpoint for the CLI companion
+    control-commands.ts   # RPC handler map built from the DI container
+  cli/
+    main.ts               # Electron hidden-CLI entry (no window)
+    commands/             # Pure, transport-agnostic command layer
+    transports/http.ts    # CliClient over the ControlServer
   ipc/
     php.handlers.ts
     database.handlers.ts
@@ -64,12 +83,20 @@ electron/               # Main process
     devserver.handlers.ts
     extensions.handlers.ts
     settings.handlers.ts
+    mkcert.handlers.ts
+    proxy.handlers.ts
+    sites.handlers.ts
+    scaffold.handlers.ts
+    cli.handlers.ts
   types/
     php.ts              # PhpVersion, DownloadProgress
     database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
-    project.ts          # Project
+    project.ts          # Project (incl. Phase 4 domains/sslEnabled/proxyPort)
     devserver.ts        # DevServerStatus
     extension.ts        # ExtensionInfo
+    site.ts             # Site, SiteStatus, MkcertStatus
+    proxy.ts            # ProxyRoute, ProxyStatus
+    scaffold.ts         # ScaffoldOptions, ScaffoldTemplate
   utils/
     download.ts         # Shared download utility (single source)
 
@@ -83,6 +110,7 @@ src/                    # Renderer process
     PhpManagerPage.vue
     DatabasePage.vue
     ProjectsPage.vue
+    SitesPage.vue
   features/
     php/                # PHP feature module
       stores/           # Pinia store
@@ -97,6 +125,11 @@ src/                    # Renderer process
       stores/
       components/
     extensions/         # Extension manager feature module
+      stores/
+      components/
+    sites/              # Site/domain management feature module
+      stores/
+    scaffold/           # Project quick-create feature module
       stores/
       components/
   widgets/              # Composition of multiple features
@@ -118,17 +151,22 @@ Main process services implement shared interfaces (`IPhpManager`, `IDatabaseEngi
 
 ### Service Boundaries
 
-| Service | Interface | Responsibilities |
-|---------|-----------|-----------------|
-| `PhpManager` | `IPhpManager` | PHP version list/download/switch/uninstall, PATH manipulation |
-| `MySqlManager` | `IDatabaseEngine` | MySQL download/extract, instance initialize, start/stop process control, instance status |
-| `DatabaseRegistry` | (concrete, singleton) + `IServiceProvider` | Multi-engine instance tracking, engine resolution by instanceId, implements `IServiceProvider` for tray/auto-start visibility |
-| `ServiceRegistry` | (concrete, singleton) | Aggregates status from all `IServiceProvider` instances. Used by tray and auto-start. Orphan process reattach on startup. |
-| `ProjectManager` | `IProjectManager` | Project CRUD, `.php-version` scanning (read-only), project persistence |
-| `DevServerManager` | `IDevServerManager` + `IServiceProvider` | Dev server process lifecycle (`php -S`), log capture, port management. Registers with `ServiceRegistry`. |
-| `ExtensionManager` | `IExtensionManager` | List bundled extensions, enable/disable via `php.ini` modification. Bundled only (no PECL). |
-| `SettingsStore` | (concrete, singleton) | SQLite persistence: settings KV, instances, projects. Exposed to renderer via `settings:*` IPC. |
-| `Win32PlatformAdapter` | `IPlatformAdapter` | OS-specific: PATH (reg query/setx), ZIP extraction (PowerShell), download URLs, binary extension, install directories, extension file names, auto-start shortcuts |
+| Service                | Interface                                  | Responsibilities                                                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PhpManager`           | `IPhpManager`                              | PHP version list/download/switch/uninstall, PATH manipulation                                                                                                                                                                          |
+| `MySqlManager`         | `IDatabaseEngine`                          | MySQL download/extract, instance initialize, start/stop process control, instance status                                                                                                                                               |
+| `DatabaseRegistry`     | (concrete, singleton) + `IServiceProvider` | Multi-engine instance tracking, engine resolution by instanceId, implements `IServiceProvider` for tray/auto-start visibility                                                                                                          |
+| `ServiceRegistry`      | (concrete, singleton)                      | Aggregates status from all `IServiceProvider` instances. Used by tray and auto-start. Orphan process reattach on startup.                                                                                                              |
+| `ProjectManager`       | `IProjectManager`                          | Project CRUD, `.php-version` scanning (read-only), project persistence                                                                                                                                                                 |
+| `DevServerManager`     | `IDevServerManager` + `IServiceProvider`   | Dev server process lifecycle (`php -S`), log capture, port management. Registers with `ServiceRegistry`.                                                                                                                               |
+| `ExtensionManager`     | `IExtensionManager`                        | List bundled extensions, enable/disable via `php.ini` modification. Bundled only (no PECL).                                                                                                                                            |
+| `MkcertManager`        | `IMkcertManager`                           | mkcert binary download, CA trust install (elevated), single wildcard `*.test` certificate generation                                                                                                                                   |
+| `CaddyManager`         | `ICaddyManager` + `IServiceProvider`       | Caddy download/run/stop, Caddyfile generation (validate-then-reload), port fallback, registered with `ServiceRegistry`                                                                                                                 |
+| `SiteManager`          | `ISiteManager`                             | Single source of truth for domain↔project mapping; orchestrates hosts (`HostsFile`), Caddy routes, and certs                                                                                                                           |
+| `ScaffolderManager`    | (concrete, singleton)                      | `IScaffolder` registry; quick-create projects via composer templates                                                                                                                                                                   |
+| `ControlServer`        | (concrete)                                 | Loopback JSON-RPC endpoint serving the `horde` CLI companion                                                                                                                                                                           |
+| `SettingsStore`        | (concrete, singleton)                      | SQLite persistence: settings KV, instances, projects + `PRAGMA user_version` migrations                                                                                                                                                |
+| `Win32PlatformAdapter` | `IPlatformAdapter`                         | OS-specific: PATH (reg query/setx), ZIP extraction (PowerShell), download URLs, binary extension, install directories, extension file names, auto-start shortcuts, hosts I/O, elevation, proxy/cert dirs, CLI shims, process-tree kill |
 
 All OS-coupled operations flow through `IPlatformAdapter` so that services never branch on `process.platform`. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
 
@@ -145,7 +183,9 @@ All OS-coupled concerns are isolated behind `IPlatformAdapter`:
 - Binary resolution (`.exe` suffix)
 - Download source URLs (windows.php.net vs php.net macOS builds)
 - Archive extraction (PowerShell vs `unzip`)
-- Future: hosts file path, auto-start directory
+- Hosts file I/O + formatting, proxy/cert store directories (Phase 4)
+- Privileged-operation elevation + CA trust install + low-port capability (Phase 4, [ADR-0011](adr/0011-privileged-operation-elevation.md))
+- CLI PATH shims and process-tree kill (Phase 4)
 
 The interface is defined now; only the Windows implementation is built for MVP. macOS and Linux implementations are deferred to Phase 6. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
 
@@ -162,7 +202,10 @@ interface ElectronAPI {
     getActiveVersion(): Promise<string | null>;
     switchGlobal(version: string): Promise<void>;
     uninstallVersion(version: string): Promise<void>;
-    onDownloadProgress(version: string, callback: (p: DownloadProgress) => void): () => void;
+    onDownloadProgress(
+      version: string,
+      callback: (p: DownloadProgress) => void
+    ): () => void;
   };
 
   databases: {
@@ -181,7 +224,11 @@ interface ElectronAPI {
     createDatabase(instanceId: string, name: string): Promise<void>;
     dropDatabase(instanceId: string, name: string): Promise<void>;
     listDatabases(instanceId: string): Promise<string[]>;
-    onDownloadProgress(engine: string, version: string, callback: (p: DownloadProgress) => void): () => void;
+    onDownloadProgress(
+      engine: string,
+      version: string,
+      callback: (p: DownloadProgress) => void
+    ): () => void;
   };
 
   projects: {
@@ -213,16 +260,51 @@ interface ElectronAPI {
     set(key: string, value: string): Promise<void>;
   };
 
+  sites: {
+    list(): Promise<Site[]>;
+    setDomains(projectId: string, domains: string[]): Promise<void>;
+    enableSsl(projectId: string, enabled: boolean): Promise<void>;
+    getStatus(): Promise<SiteStatus>;
+  };
+
+  proxy: {
+    getStatus(): Promise<ProxyStatus>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    getLogs(tail?: number): Promise<string[]>;
+  };
+
+  mkcert: {
+    getStatus(): Promise<MkcertStatus>;
+    install(): Promise<void>;
+  };
+
+  scaffold: {
+    listTemplates(): Promise<ScaffoldTemplate[]>;
+    create(options: ScaffoldOptions): Promise<void>;
+    onLog(callback: (line: string) => void): () => void;
+  };
+
+  cli: {
+    install(): Promise<void>;
+    uninstall(): Promise<void>;
+    isInstalled(): Promise<boolean>;
+  };
+
   openDirectory(path: string): Promise<void>;
 }
 ```
 
 Key design decisions:
+
 - `databases.*` is engine-agnostic — the renderer never imports `mysql` or `postgres` specifically. New engines are additive.
 - `projects.*` uses discovery-only `.php-version` scanning (read from disk, never write). See [ADR-0006](adr/0006-project-management-scope-boundary.md).
 - `devserver.*` references projects by ID but lives in its own IPC namespace and FSD module. Services register with `ServiceRegistry` for tray visibility. See [ADR-0007](adr/0007-service-registry-abstraction.md).
 - `extensions.*` is limited to bundled extensions only (no PECL). See [ADR-0009](adr/0009-extension-manager-scope-boundary.md).
 - `settings.*` provides a generic key-value persistence channel to the renderer. See [ADR-0008](adr/0008-settings-store-consolidation.md).
+- `sites.*` / `proxy.*` / `mkcert.*` expose the Phase 4 site/domain, Caddy, and HTTPS services; `sites:set-domains` is the only channel that mutates the domain mapping — all downstream writes (hosts, Caddy, certs) are derived by `SiteManager`. See [ADR-0012](adr/0012-site-domain-management-single-source-of-truth.md), [ADR-0013](adr/0013-caddy-reverse-proxy-as-managed-service.md).
+- `scaffold.*` exposes the `IScaffolder` registry; `scaffold:create` streams logs on a push channel. See [ADR-0014](adr/0014-scaffolder-registry.md).
+- `cli.*` installs/removes the `horde` PATH shim; the CLI itself talks to the app over a loopback HTTP RPC endpoint (not IPC). See [ADR-0015](adr/0015-cli-companion-architecture.md).
 - Every database channel uses `instanceId` rather than relying on a singleton. This supports multiple simultaneous instances from day one.
 - `onDownloadProgress()` and `onLog()` return an unsubscribe function to prevent listener leaks.
 - Progress push channels follow the pattern `php:download-progress-{version}`, `database:download-progress-{engine}-{version}`, and `devserver:log-{projectId}`.
@@ -256,5 +338,11 @@ We use `electron-builder` with NSIS for Windows. The installer bundles all Node.
 - [ADR-0007](adr/0007-service-registry-abstraction.md) — ServiceRegistry & unified process status
 - [ADR-0008](adr/0008-settings-store-consolidation.md) — SettingsStore canonical persistence
 - [ADR-0009](adr/0009-extension-manager-scope-boundary.md) — Extension manager scope (bundled only)
+- [ADR-0010](adr/0010-sqlite-migration-mechanism.md) — SQLite schema migrations
+- [ADR-0011](adr/0011-privileged-operation-elevation.md) — Privileged-operation elevation
+- [ADR-0012](adr/0012-site-domain-management-single-source-of-truth.md) — Site/domain management & HTTPS
+- [ADR-0013](adr/0013-caddy-reverse-proxy-as-managed-service.md) — Caddy reverse proxy
+- [ADR-0014](adr/0014-scaffolder-registry.md) — Project quick-create registry
+- [ADR-0015](adr/0015-cli-companion-architecture.md) — CLI companion architecture
 - [Requirements](requirements.md)
 - [Roadmap](roadmap.md)

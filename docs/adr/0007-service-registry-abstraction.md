@@ -11,6 +11,7 @@ Phase 2 introduces a built-in development server alongside the existing MySQL in
 Additionally, if the app crashes, running `mysqld.exe` and `php.exe` processes become orphaned zombies. On restart, the app can see persisted instance configs but cannot determine which processes are still alive — they show as "stopped" in the UI despite running on the ports.
 
 We need:
+
 1. A single abstraction that aggregates status across all service types
 2. A startup mechanism to detect and reattach to orphaned processes
 
@@ -23,10 +24,10 @@ Create an `IServiceProvider` interface and a `ServiceRegistry` aggregator that a
 ```ts
 // electron/services/interfaces/IServiceRegistry.ts
 interface ServiceStatus {
-  serviceId: string;       // instanceId (MySQL) or projectId (dev server)
-  providerId: string;      // 'mysql' | 'devserver'
-  engine?: string;         // 'mysql' (for database providers)
-  displayName: string;     // 'MySQL 8.0.37' or 'MyProject (PHP 8.2)'
+  serviceId: string; // instanceId (MySQL) or projectId (dev server)
+  providerId: string; // 'mysql' | 'devserver'
+  engine?: string; // 'mysql' (for database providers)
+  displayName: string; // 'MySQL 8.0.37' or 'MyProject (PHP 8.2)'
   running: boolean;
   pid?: number;
   port?: number;
@@ -36,7 +37,7 @@ interface IServiceProvider {
   readonly providerId: string;
   readonly displayName: string;
   getStatuses(): Promise<ServiceStatus[]>;
-  reattachOrphans?(): Promise<void>;  // optional, for process recovery on restart
+  reattachOrphans?(): Promise<void>; // optional, for process recovery on restart
 }
 ```
 
@@ -64,10 +65,10 @@ class ServiceRegistry {
 
 ### Who implements IServiceProvider
 
-| Service | How |
-|---------|-----|
+| Service            | How                                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DatabaseRegistry` | Wraps existing `listAllInstances()` into `getStatuses()`. `reattachOrphans()` scans known ports for running `mysqld.exe` processes and reattaches by PID. |
-| `DevServerManager` | Implements `IServiceProvider` directly. `getStatuses()` maps to `listAll()`. `reattachOrphans()` scans known ports for running `php.exe -S` processes. |
+| `DevServerManager` | Implements `IServiceProvider` directly. `getStatuses()` maps to `listAll()`. `reattachOrphans()` scans known ports for running `php.exe -S` processes.    |
 
 ### Orphan Reattach Strategy
 
@@ -83,7 +84,7 @@ Note: On Windows, `taskkill /PID` still works for orphaned processes since we ha
 
 ```ts
 // After DI container setup, before creating window:
-import { ServiceRegistry } from './services/service-registry';
+import { ServiceRegistry } from "./services/service-registry";
 
 const serviceRegistry = container.resolve(ServiceRegistry);
 
@@ -97,31 +98,36 @@ await serviceRegistry.restoreAll();
 
 ### What consumes ServiceRegistry
 
-| Consumer | How |
-|----------|-----|
-| **System tray** | IPC handler calls `serviceRegistry.getAllStatuses()` to build tray menu with running/stopped indicators |
-| **Auto-start** | Iterates `getAllStatuses()` on boot to launch services marked for auto-start |
-| **Dashboard** | In addition to individual stores (PhpStatusWidget, DatabaseStatusWidget), a `ServiceOverviewWidget` can display all services in one card using the registry |
+| Consumer        | How                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System tray** | IPC handler calls `serviceRegistry.getAllStatuses()` to build tray menu with running/stopped indicators                                                     |
+| **Auto-start**  | Iterates `getAllStatuses()` on boot to launch services marked for auto-start                                                                                |
+| **Dashboard**   | In addition to individual stores (PhpStatusWidget, DatabaseStatusWidget), a `ServiceOverviewWidget` can display all services in one card using the registry |
 
 ## Consequences
 
 **Easier:**
+
 - Adding a new service type (e.g., Caddy in Phase 4) means implementing `IServiceProvider` and one `registerProvider()` call — tray and auto-start pick it up automatically
 - Orphan detection is centralized rather than duplicated per service
 - The tray IPC handler has a single source of truth for service status
 
 **Harder:**
+
 - `reattachOrphans()` is inherently platform-specific (process listing differs across Windows/macOS/Linux). The first implementation targets Windows only via `netstat`/`tasklist`; macOS/Linux equivalents are deferred to Phase 6 alongside the platform adapters.
 - Reattached processes don't have a `ChildProcess` reference, so we can't receive `exit` events. The status needs to be actively polled or checked at access time rather than event-driven.
 - The `IServiceProvider` interface adds an indirection layer that every service type must implement, even if only for status reporting.
 
 **Follow-up:**
+
 - Create `electron/services/interfaces/IServiceRegistry.ts`
 - Create `electron/services/service-registry.ts`
 - `DatabaseRegistry` gains `implements IServiceProvider` + `getStatuses()` + `reattachOrphans()`
 - `DevServerManager` implements `IServiceProvider` from the start
 - Register both with `ServiceRegistry` in `main.ts`
 - Call `serviceRegistry.restoreAll()` during startup, before `createWindow()`
+
+> **Phase 4 confirmation:** `CaddyManager` implements `IServiceProvider` (`providerId: "proxy"`) and is registered via `registerProvider()` in `main.ts` (see [ADR-0013](../adr/0013-caddy-reverse-proxy-as-managed-service.md)). The tray and auto-start consumed it with zero changes — exactly the outcome this ADR predicted. Its `reattachOrphans()` probes the persisted HTTP port rather than `netstat`.
 
 ## Alternatives Considered
 

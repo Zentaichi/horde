@@ -8,7 +8,7 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | 🔄   | In progress        |
 | ☑️   | Planned (post-MVP) |
 
-> **Note:** Phase 3 is complete (MySQL, MariaDB, and PostgreSQL engines with import/export). See the [roadmap](roadmap.md) for Phase 4+ plans.
+> **Note:** Phase 4 is complete (local sites, HTTPS via mkcert + Caddy, quick-create, CLI companion). See the [roadmap](roadmap.md) for Phase 5+ plans.
 
 ## PHP Management
 
@@ -21,7 +21,7 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | Enable/disable extensions with UI                  | ✔️     |
 | Edit `php.ini` directly in the app                 | ☑️     |
 | Run a local development server with a single click | ✔️     |
-| Built-in HTTPS via mkcert                          | ☑️     |
+| Built-in HTTPS via mkcert                          | ✔️     |
 | Auto-start a chosen PHP version at system boot     | ✔️     |
 
 ## Database Management
@@ -40,9 +40,18 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 
 | Feature                                                      | Status |
 | ------------------------------------------------------------ | ------ |
-| Map local domains to project folders (hosts file management) | ☑️     |
-| Automatic PHP built-in server or Caddy proxy                 | ☑️     |
-| Quick project creation from framework templates              | ☑️     |
+| Map local domains to project folders (hosts file management) | ✔️     |
+| Automatic Caddy reverse proxy                                | ✔️     |
+| Built-in HTTPS via wildcard mkcert certificate               | ✔️     |
+| Quick project creation from framework templates              | ✔️     |
+
+## CLI Companion
+
+| Feature                                         | Status |
+| ----------------------------------------------- | ------ |
+| `horde` command on PATH (install/uninstall)     | ✔️     |
+| `horde php-version` `.php-version` resolver     | ✔️     |
+| Status queries (`projects`, `sites`, `servers`) | ✔️     |
 
 ## Developer Experience
 

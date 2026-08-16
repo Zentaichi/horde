@@ -14,8 +14,13 @@ These run automatically in CI for every push to `master` and every PR. They must
 ## Manual verification
 
 - [ ] Launch `release/win-unpacked/Horde.exe` — app opens, dashboard renders, no blank window
-- [ ] Click through each page (PHP, Databases, Projects, Dev Servers) — no crashes or blank pages
+- [ ] Click through each page (PHP, Databases, Projects, Sites) — no crashes or blank pages
 - [ ] Download and switch a PHP version; start/stop a MySQL instance; start a dev server
+- [ ] **Sites:** assign a domain to a project, apply, and confirm the hosts entry is present; start the project's dev server and confirm `http://<domain>` resolves through the proxy
+- [ ] **HTTPS:** install mkcert (accept the UAC prompt), enable HTTPS on a site, and confirm `https://<domain>` loads without certificate warnings
+- [ ] **Quick-create:** scaffold a Laravel project from the Projects page and confirm it is registered as a managed project
+- [ ] **CLI:** install the `horde` command, then run `horde version`, `horde php-version <dir>`, and `horde projects` from a terminal
+- [ ] Delete a project with a mapped domain and confirm its hosts entry is removed
 
 ## E2E tests
 

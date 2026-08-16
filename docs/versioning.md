@@ -12,11 +12,12 @@ Horde follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html):
 
 Because Horde is pre-1.0, every milestone (a completed roadmap phase) is treated as a **MINOR** bump:
 
-| Version | Phase / Milestone               | Date       |
-| ------- | ------------------------------- | ---------- |
-| 0.3.0   | Phase 1 — Core MVP              | 2026-07-14 |
-| 0.4.0   | Phase 2 — Polish & Developer UX | 2026-07-24 |
-| 0.5.0   | Phase 3 — Full Database Suite   | 2026-08-04 |
+| Version | Phase / Milestone                     | Date       |
+| ------- | ------------------------------------- | ---------- |
+| 0.3.0   | Phase 1 — Core MVP                    | 2026-07-14 |
+| 0.4.0   | Phase 2 — Polish & Developer UX       | 2026-07-24 |
+| 0.5.0   | Phase 3 — Full Database Suite         | 2026-08-04 |
+| 0.6.0   | Phase 4 — Advanced Herd-like Features | 2026-08-17 |
 
 ### Why there is no 0.1.0 or 0.2.0
 

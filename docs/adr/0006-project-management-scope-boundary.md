@@ -24,40 +24,40 @@ A Project in Phase 2 is defined as:
 
 **Explicitly OUT of scope for Phase 2:**
 
-| Deferred to Phase 4 | Rationale |
-|---------------------|-----------|
-| Domain mapping / hosts file editing | Requires mkcert + Caddy; Phase 4 item |
-| SSL via mkcert / Caddy reverse proxy | Entirely Phase 4's "Advanced Herd-like Features" |
-| Framework scaffolding (Laravel new, etc.) | Phase 4 item "Project quick-create" |
-| CLI `horde` command for `.php-version` resolution | Phase 4 item — the CLI tool is the resolver |
-| Writing `.php-version` files from the UI | Discovery-only avoids permission/file-conflict concerns |
+| Deferred to Phase 4                               | Status in Phase 4                                                                                                                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain mapping / hosts file editing               | ✅ Delivered — `SiteManager` + `HostsFile` (see [ADR-0012](../adr/0012-site-domain-management-single-source-of-truth.md))                                                                         |
+| SSL via mkcert / Caddy reverse proxy              | ✅ Delivered — `MkcertManager` + `CaddyManager` (see [ADR-0012](../adr/0012-site-domain-management-single-source-of-truth.md), [ADR-0013](../adr/0013-caddy-reverse-proxy-as-managed-service.md)) |
+| Framework scaffolding (Laravel new, etc.)         | ✅ Delivered — `IScaffolder` registry (see [ADR-0014](../adr/0014-scaffolder-registry.md))                                                                                                        |
+| CLI `horde` command for `.php-version` resolution | ✅ Delivered — the CLI is the resolver (see [ADR-0015](../adr/0015-cli-companion-architecture.md))                                                                                                |
+| Writing `.php-version` files from the UI          | Still discovery-only — no file writes; the CLI resolver reads, it does not write                                                                                                                  |
 
 ### 2. Data Model
 
 ```ts
 // electron/types/project.ts
 interface Project {
-  id: string;           // UUID (auto-generated on add)
-  name: string;         // display name (defaults to path basename)
-  path: string;         // absolute filesystem path
-  phpVersion?: string;  // from .php-version file, read at scan time
-  // ═══ PHASE 4 EXTENSION POINTS (not implemented) ═══
-  // domains?: string[]
-  // sslEnabled?: boolean
-  // proxyPort?: number
+  id: string; // UUID (auto-generated on add)
+  name: string; // display name (defaults to path basename)
+  path: string; // absolute filesystem path
+  phpVersion?: string; // from .php-version file, read at scan time
+  // ═══ PHASE 4 (implemented) — site management extension points ═══
+  domains?: string[]; // local domains mapped to this project (e.g. ["acme.test"])
+  sslEnabled?: boolean; // whether the proxy serves HTTPS for these domains
+  proxyPort?: number; // reserved for per-site proxy port override
 }
 ```
 
 ### 3. IPC Contract: `projects:*` (6 channels)
 
-| Channel | Direction | Signature |
-|---------|-----------|-----------|
-| `projects:list` | renderer→main | `() → Project[]` |
-| `projects:add` | renderer→main | `({ name, path }) → Project` |
-| `projects:remove` | renderer→main | `(projectId) → void` |
-| `projects:scan-php-version` | renderer→main | `(projectId) → string?` |
-| `projects:scan-all` | renderer→main | `() → void` |
-| `projects:open-dir` | renderer→main | `(projectId) → void` |
+| Channel                     | Direction     | Signature                    |
+| --------------------------- | ------------- | ---------------------------- |
+| `projects:list`             | renderer→main | `() → Project[]`             |
+| `projects:add`              | renderer→main | `({ name, path }) → Project` |
+| `projects:remove`           | renderer→main | `(projectId) → void`         |
+| `projects:scan-php-version` | renderer→main | `(projectId) → string?`      |
+| `projects:scan-all`         | renderer→main | `() → void`                  |
+| `projects:open-dir`         | renderer→main | `(projectId) → void`         |
 
 `projects:add` uses Electron's `dialog.showOpenDialog` in the IPC handler to open a native directory picker, then scans the chosen directory for `.php-version`. `projects:remove` does NOT delete files on disk — it only removes the project from Horde's tracking. If a dev server is running for the project, it is stopped first by the handler before removing the row.
 
@@ -88,16 +88,17 @@ interface IDevServerManager {
 
 Dev server IPC namespace: `devserver:*` (5 invoke channels + 1 push channel)
 
-| Channel | Type | Signature |
-|---------|------|-----------|
-| `devserver:start` | invoke | `(projectId, port?) → DevServerStatus` |
-| `devserver:stop` | invoke | `(projectId) → void` |
-| `devserver:get-status` | invoke | `(projectId) → DevServerStatus?` |
-| `devserver:list-all` | invoke | `() → DevServerStatus[]` |
-| `devserver:get-logs` | invoke | `(projectId, tail?) → string[]` |
-| `devserver:log-{projectId}` | push | Renderer subscribes for real-time log lines |
+| Channel                     | Type   | Signature                                   |
+| --------------------------- | ------ | ------------------------------------------- |
+| `devserver:start`           | invoke | `(projectId, port?) → DevServerStatus`      |
+| `devserver:stop`            | invoke | `(projectId) → void`                        |
+| `devserver:get-status`      | invoke | `(projectId) → DevServerStatus?`            |
+| `devserver:list-all`        | invoke | `() → DevServerStatus[]`                    |
+| `devserver:get-logs`        | invoke | `(projectId, tail?) → string[]`             |
+| `devserver:log-{projectId}` | push   | Renderer subscribes for real-time log lines |
 
 PHP version resolution at dev server start:
+
 1. Read the project's `.php-version` field from the projects table
 2. If present and installed, use that version's PHP binary
 3. If absent or not installed, fall back to the globally active PHP version
@@ -151,17 +152,20 @@ CREATE TABLE IF NOT EXISTS dev_servers (
 ## Consequences
 
 **Easier:**
+
 - Adding Phase 4 site management means adding fields to `Project` and new IPC channels — no existing Phase 2 code changes
 - Projects and dev servers can be developed and tested independently
 - The `.php-version` discovery-only approach avoids file-write conflicts and permission issues
 - Dev server resolves project PHP version at start time from project data — it never reads `.php-version` files directly, keeping I/O in `ProjectManager`
 
 **Harder:**
+
 - Users cannot create `.php-version` files from the Horde UI — they must create them manually or via CLI
 - The "per-project PHP version" feature has no runtime effect at the terminal until Phase 4's `horde` CLI tool ships (it only affects the dev server and UI display)
 - The explicit scope boundary requires discipline — feature requests for domain mapping during Phase 2 must be deferred to Phase 4
 
 **Follow-up:**
+
 - Create `electron/types/project.ts` with the `Project` interface
 - Create `electron/services/interfaces/IProjectManager.ts`
 - Create `electron/services/project-manager.ts` (implements `IProjectManager`)

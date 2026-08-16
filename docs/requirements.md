@@ -63,18 +63,47 @@ Cross-platform support (macOS, Linux) is a stated goal but not in scope for the 
 - **FR8.2:** User can configure individual services to auto-start when the app launches.
 - **FR8.3:** User can configure Horde to auto-start on Windows boot via a Startup folder shortcut.
 
+### FR9 — Sites & Domain Mapping
+
+- **FR9.1:** User can assign one or more local domains (`.test` by convention) to a project.
+- **FR9.2:** Horde manages the hosts file entries for those domains (backup + rollback, never overwriting user entries, conflict detection).
+- **FR9.3:** Removing a project cleans up its hosts entries and proxy routes.
+
+### FR10 — Built-in HTTPS (mkcert)
+
+- **FR10.1:** Horde manages a local certificate authority and a single wildcard `*.test` certificate.
+- **FR10.2:** CA trust installation uses elevation and degrades gracefully when denied.
+- **FR10.3:** Adding/removing domains never requires certificate regeneration.
+
+### FR11 — Reverse Proxy (Caddy)
+
+- **FR11.1:** Horde runs Caddy as a managed service (status, start/stop, tray visibility via ServiceRegistry).
+- **FR11.2:** Caddy routes each mapped domain to the project's dev server and terminates TLS.
+- **FR11.3:** Config changes are validated before reload; occupied/privileged ports fall back gracefully.
+
+### FR12 — Project Quick-Create
+
+- **FR12.1:** User can scaffold a new project from a template (Laravel, Symfony) without leaving the app.
+- **FR12.2:** Scaffolding streams progress logs, enforces PHP version requirements, and registers the finished project automatically.
+- **FR12.3:** Templates are registered additively via `IScaffolder`.
+
+### FR13 — CLI Companion
+
+- **FR13.1:** A `horde` command is installable on PATH and exposes `version`, `php-version`, `projects`, `sites`, and `servers`.
+- **FR13.2:** The CLI resolves `.php-version` for any directory (the resolver deferred from ADR-0006).
+- **FR13.3:** Communication with the app is loopback-only and token-authenticated; a clean exit code reports "app not running".
+
 ## Non-Functional Requirements
 
 - **Performance:** Downloads must be async with progress indication; UI remains responsive.
 - **Reliability:** All critical operations (download, extraction, process start) must handle errors gracefully and log failures.
-- **Security:** Renderer process has no direct Node.js access; all system interactions go through typed IPC.
+- **Security:** Renderer process has no direct Node.js access; all system interactions go through typed IPC. The CLI control endpoint binds loopback only and requires a bearer token.
+- **Privileges:** The app runs without administrator privileges by default. Privileged operations (hosts edit, CA trust install, low-port binding where required) are user-initiated, elevated per-operation via `IPlatformAdapter`, and degrade gracefully when denied.
 - **Testability:** Core services are unit-testable in isolation via mock implementations of shared interfaces (`IPlatformAdapter`, `IRuntimeManager`, `IDatabaseEngine`). E2E tests use mock services behind an env-var gate.
-- **Forward-compatibility:** Service boundaries use shared interfaces (`IDatabaseEngine`, `IPlatformAdapter`) so that Phase 3 database engines and Phase 6 platform ports add engines/platforms without refactoring Phase 1/2 code.
+- **Forward-compatibility:** Service boundaries use shared interfaces (`IDatabaseEngine`, `IPlatformAdapter`, `IServiceProvider`, `IScaffolder`) so that Phase 3 database engines and Phase 6 platform ports add engines/platforms without refactoring Phase 1/2 code.
 
 ## Out of Scope (Current Phase)
 
-- Built-in HTTPS via mkcert, Caddy/Nginx reverse proxy
 - Full `php.ini` text editor (extension toggling modifies ini programmatically)
-- Site/domain mapping and hosts file integration
-- CLI companion tool
-- macOS or Linux support
+- macOS or Linux support (Phase 6)
+- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n (Phase 5)

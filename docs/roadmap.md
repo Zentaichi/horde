@@ -65,11 +65,11 @@ These refactors address architectural risks identified during Phase 1 review. Ea
 
 ## Phase 4 — Advanced Herd-like Features
 
-- [ ] Local domain mapping and hosts file integration
-- [ ] Reverse proxy with Caddy (or Nginx) for automatic SSL
-- [ ] Built-in HTTPS via mkcert
-- [ ] Project quick-create from Laravel, Symfony, etc.
-- [ ] CLI companion tool (`horde` command)
+- [x] Local domain mapping and hosts file integration (`SiteManager` + `HostsFile`, `.test` convention, backup/rollback + conflict detection — [ADR-0012](adr/0012-site-domain-management-single-source-of-truth.md))
+- [x] Reverse proxy with Caddy for automatic SSL (`CaddyManager` as `IServiceProvider`, validate-then-reload, port fallback — [ADR-0013](adr/0013-caddy-reverse-proxy-as-managed-service.md))
+- [x] Built-in HTTPS via mkcert (wildcard `*.test` cert, elevated CA trust — [ADR-0012](adr/0012-site-domain-management-single-source-of-truth.md))
+- [x] Project quick-create from Laravel, Symfony, etc. (`IScaffolder` registry + composer — [ADR-0014](adr/0014-scaffolder-registry.md))
+- [x] CLI companion tool (`horde` command — hidden Electron mode, transport-agnostic command layer — [ADR-0015](adr/0015-cli-companion-architecture.md))
 
 ## Phase 5 — Maintenance & Community
 
@@ -91,7 +91,7 @@ These refactors address architectural risks identified during Phase 1 review. Ea
 
 > **Deferred by design.** Phase 1 built the abstraction boundary; this phase writes the implementations. No Phase 1–5 code needs rewriting — the adapter is swapped at startup via DI container configuration.
 
-> Updated last: 2026-07-31 (Phase 3 complete — PostgreSQL, MariaDB, import/export, cross-engine dashboard)
+> Updated last: 2026-08-17 (Phase 4 complete — local sites, HTTPS, quick-create, CLI companion)
 
 ## Phase 2.5 — Branding & Identity
 

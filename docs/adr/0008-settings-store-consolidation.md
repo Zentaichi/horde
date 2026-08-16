@@ -13,11 +13,11 @@
 
 Meanwhile, other state lives outside SettingsStore:
 
-| State | Current storage | Problem |
-|-------|----------------|---------|
-| Theme (dark/light) | `localStorage` (renderer) | Inaccessible from main process; no way to sync across windows |
-| Active PHP version | Scanned from real PATH on every call | No cache; every dashboard load hits the registry |
-| User preferences | None | Phase 2 features (auto-start config, window position) need somewhere to live |
+| State              | Current storage                      | Problem                                                                      |
+| ------------------ | ------------------------------------ | ---------------------------------------------------------------------------- |
+| Theme (dark/light) | `localStorage` (renderer)            | Inaccessible from main process; no way to sync across windows                |
+| Active PHP version | Scanned from real PATH on every call | No cache; every dashboard load hits the registry                             |
+| User preferences   | None                                 | Phase 2 features (auto-start config, window position) need somewhere to live |
 
 Phase 2 adds projects, dev server configs, auto-start preferences, and potentially window state persistence. Without a unified persistence strategy, each feature will invent its own storage (flat files, more localStorage keys, dedicated SQLite tables written by one-off code).
 
@@ -93,16 +93,19 @@ Either in-memory only (ephemeral, recreated each session) or persisted in a `dev
 ## Consequences
 
 **Easier:**
+
 - Any new IPC handler that needs persistence calls `settingsStore.get('key')` — no new tables, no new channels
 - Structured data follows the `instances`/`projects` pattern: one table + three methods on SettingsStore
 - The `settings:*` IPC channels give the renderer a direct line to persistent storage without per-feature channels
 
 **Harder:**
+
 - The `settings` KV table stores strings only — callers must serialize/deserialize structured data (JSON). This is simple but means no querying or indexing individual fields within a JSON value.
 - SettingsStore is growing beyond "settings" into "all persistence." Renaming it to `PersistenceStore` would be more accurate but is a cosmetic change not worth the diff at this stage.
-- No migration system exists for SQLite schema. Adding tables requires manual `CREATE TABLE IF NOT EXISTS` in `createTables()`. A Phase 5 concern.
+- ~~No migration system exists for SQLite schema. Adding tables requires manual `CREATE TABLE IF NOT EXISTS` in `createTables()`. A Phase 5 concern.~~ **Superseded in Phase 4** by the migration mechanism in [ADR-0010](0010-sqlite-migration-mechanism.md) — `createTables()` now defines the base schema and an ordered `PRAGMA user_version`-backed runner evolves it (used to add Phase 4 project site fields).
 
 **Follow-up:**
+
 - Add `settings:get` and `settings:set` IPC handlers
 - Add `projects` table to `SettingsStore.createTables()`
 - Add `saveProject`, `deleteProject`, `loadProjects` methods

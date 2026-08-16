@@ -26,19 +26,24 @@ Services remain responsible for URL construction and post-download extraction. T
 ## Consequences
 
 **Easier:**
+
 - Single place to fix bugs, add retry logic, or change stream handling (e.g., `AbortController` support, connection timeout)
 - New services (extension manager, dev server tooling) import one function instead of copying 29 lines
 - Tests can mock `fetch()` at the global level — no DI ceremony needed
 
 **Harder:**
+
 - Must ensure the progress callback type is compatible with all consumers (already the case — `DownloadProgress` is the shared type)
 - The utility must handle `Content-Length: 0` (streaming without known size) gracefully — currently it suppresses progress events, which is correct behavior for all existing callers
 
 **Follow-up:**
+
 - Remove `downloadFile()` from `php-manager.ts` (L177-205)
 - Remove `downloadFile()` from `mysql-manager.ts` (L359-387)
 - Add `import { downloadFile } from '../utils/download'` to both files
 - Delete the dead `ProgressInfo` type alias in `download.ts` (use `DownloadProgress` from `types/php.ts`)
+
+> **Phase 4 confirmation:** Caddy, mkcert, and the composer.phar downloads all reuse this single utility — the consolidation prevented a fourth copy from appearing in `CaddyManager`/`MkcertManager`/`ComposerScaffolder`.
 
 ## Alternatives Considered
 

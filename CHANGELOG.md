@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Local domain mapping and hosts file integration (`SiteManager` + `HostsFile`) — per-project `.test` domains with backup/rollback, conflict detection, and stale-entry cleanup on project removal
+- Reverse proxy via Caddy (`CaddyManager`) — managed service with validate-then-reload config, port fallback, tray/auto-start integration, orphan reattach
+- Built-in HTTPS via mkcert (`MkcertManager`) — wildcard `*.test` certificate and elevated root-CA trust installation
+- Project quick-create (`IScaffolder` registry) — Laravel and Symfony templates via composer, with log streaming and automatic project registration
+- CLI companion (`horde` command) — `version`, `php-version`, `projects`, `sites`, `servers` over a loopback token-authenticated RPC endpoint; installable PATH shim
+- Sites page with proxy/HTTPS/CLI status cards and per-project domain + SSL controls
+- SQLite schema migration mechanism (`PRAGMA user_version`) with a migration adding Phase 4 project site fields
+- `IPlatformAdapter` Phase 4 surface: hosts I/O, elevation, CA trust, proxy/cert dirs, Caddy/mkcert/composer URLs, CLI shims, `killProcessTree`
+
+### Changed
+
+- `Project` type gains `domains`, `sslEnabled`, `proxyPort` (ADR-0006 Phase 4 extension points)
+- `projects:remove` routes cleanup through `SiteManager` so hosts entries and routes are removed with the project
+- `DevServerManager.stop()` uses the platform adapter's process-tree kill instead of branching on `process.platform`
+- Docs: architecture, requirements (FR9–FR13), feature-parity, roadmap updated for Phase 4
+
 ## [0.5.0] - 2026-08-04
 
 ### Added
