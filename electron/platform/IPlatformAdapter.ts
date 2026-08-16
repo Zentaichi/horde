@@ -18,9 +18,39 @@ export interface IPlatformAdapter {
   extractZip(zipPath: string, destDir: string): Promise<void>;
 
   getHostsFilePath(): string;
+  getHostsFileEol(): string;
+  getLoopbackHost(): string;
+  readHostsFile(): Promise<string>;
+  writeHostsFile(content: string): Promise<void>;
+
   getAutoStartDir(): string;
 
+  getProxyDir(): string;
+  getCertStoreDir(): string;
+
+  getCaddyDownloadUrl(version: string): string;
+  getMkcertDownloadUrl(version: string): string;
+  getComposerPharUrl(): string;
+
+  installCaTrust(certPath: string): Promise<void>;
+  canBindLowPorts(): boolean;
+  elevate(command: string, args: string[]): Promise<void>;
+
+  installCliShim(
+    name: string,
+    targetPath: string,
+    args?: string[]
+  ): Promise<void>;
+  uninstallCliShim(name: string): Promise<void>;
+  getCliInstallPath(name: string): string;
+
   resolveExtensionFileName(extensionName: string): string;
-  createAutoStartEntry(name: string, targetPath: string, args?: string[]): Promise<void>;
+  createAutoStartEntry(
+    name: string,
+    targetPath: string,
+    args?: string[]
+  ): Promise<void>;
   removeAutoStartEntry(name: string): Promise<void>;
+
+  killProcessTree(pid: number): Promise<void>;
 }

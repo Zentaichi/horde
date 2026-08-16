@@ -6,6 +6,8 @@ export class MockPlatformAdapter implements IPlatformAdapter {
   readonly platform = "win32" as const;
   readonly displayName = "Windows";
 
+  hostsContent = "";
+
   getDefaultRuntimeInstallDir(runtime: string): string {
     return `/mock/userdata/${runtime}`;
   }
@@ -50,8 +52,64 @@ export class MockPlatformAdapter implements IPlatformAdapter {
     return "/mock/hosts";
   }
 
+  getHostsFileEol(): string {
+    return "\n";
+  }
+
+  getLoopbackHost(): string {
+    return "127.0.0.1";
+  }
+
+  async readHostsFile(): Promise<string> {
+    return this.hostsContent;
+  }
+
+  async writeHostsFile(content: string): Promise<void> {
+    this.hostsContent = content;
+  }
+
   getAutoStartDir(): string {
     return "/mock/autostart";
+  }
+
+  getProxyDir(): string {
+    return "/mock/userdata/proxy";
+  }
+
+  getCertStoreDir(): string {
+    return "/mock/userdata/certs";
+  }
+
+  getCaddyDownloadUrl(version: string): string {
+    return `https://mock.dev/caddy/download/${version}`;
+  }
+
+  getMkcertDownloadUrl(version: string): string {
+    return `https://mock.dev/mkcert/download/${version}`;
+  }
+
+  getComposerPharUrl(): string {
+    return "https://mock.dev/composer/composer.phar";
+  }
+
+  async installCaTrust(_certPath: string): Promise<void> {}
+
+  canBindLowPorts(): boolean {
+    return true;
+  }
+
+  async elevate(_command: string, _args: string[]): Promise<void> {}
+
+  async installCliShim(
+    _name: string,
+    _targetPath: string,
+    _args?: string[]
+  ): Promise<void> {}
+
+  async uninstallCliShim(_name: string): Promise<void> {}
+
+  getCliInstallPath(name: string): string {
+    return `/mock/bin/${name}`;
   }
 
   resolveExtensionFileName(extensionName: string): string {
@@ -61,8 +119,10 @@ export class MockPlatformAdapter implements IPlatformAdapter {
   async createAutoStartEntry(
     _name: string,
     _targetPath: string,
-    _args?: string[],
+    _args?: string[]
   ): Promise<void> {}
 
   async removeAutoStartEntry(_name: string): Promise<void> {}
+
+  async killProcessTree(_pid: number): Promise<void> {}
 }
