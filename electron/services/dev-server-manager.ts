@@ -37,7 +37,7 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
   constructor(
     @inject("IPlatformAdapter") private readonly platform: IPlatformAdapter,
     @inject("IPhpManager") private readonly phpManager: IPhpManager,
-    @inject("IProjectManager") private readonly projectManager: IProjectManager,
+    @inject("IProjectManager") private readonly projectManager: IProjectManager
   ) {}
 
   async start(projectId: string, port?: number): Promise<DevServerStatus> {
@@ -51,7 +51,7 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
     const resolved = this.resolvePhpBinary(project);
     if (!resolved)
       throw new Error(
-        "No PHP version available. Please install PHP via the PHP tab or add a .php-version file.",
+        "No PHP version available. Please install PHP via the PHP tab or add a .php-version file."
       );
 
     const { phpBinary, phpVersion } = resolved;
@@ -64,7 +64,7 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
       ["-S", `localhost:${assignedPort}`, "-t", docroot],
       {
         stdio: ["ignore", "pipe", "pipe"],
-      },
+      }
     );
 
     const entry: ServerEntry = {
@@ -148,38 +148,8 @@ export class DevServerManager implements IDevServerManager, IServiceProvider {
       child.stderr?.removeListener("data", entry.onStderr!);
       child.removeListener("exit", entry.onExit!);
 
-      if (child.pid && process.platform === "win32") {
-        const { execFile } = await import("child_process");
-        const { promisify } = await import("util");
-        const execFileAsync = promisify(execFile);
-        try {
-          await execFileAsync("taskkill", [
-            "/PID",
-            String(child.pid),
-            "/T",
-            "/F",
-          ]);
-        } catch {
-          try {
-            child.kill("SIGTERM");
-          } catch {}
-        }
-      } else {
-        child.kill("SIGTERM");
-
-        await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            try {
-              child.kill("SIGKILL");
-            } catch {}
-            resolve();
-          }, 5000);
-
-          child.on("exit", () => {
-            clearTimeout(timeout);
-            resolve();
-          });
-        });
+      if (child.pid) {
+        await this.platform.killProcessTree(child.pid);
       }
       entry.process = null;
     }
