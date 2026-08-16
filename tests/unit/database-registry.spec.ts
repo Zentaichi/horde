@@ -16,7 +16,7 @@ vi.mock("electron", () => ({
 
 vi.mock("better-sqlite3", () => {
   const mockDb = {
-    pragma: vi.fn(),
+    pragma: vi.fn(() => 1),
     exec: vi.fn(),
     prepare: vi.fn(() => ({
       get: vi.fn(),
@@ -24,6 +24,7 @@ vi.mock("better-sqlite3", () => {
       all: vi.fn(() => []),
     })),
     close: vi.fn(),
+    transaction: vi.fn((fn: () => void) => fn),
   };
   return {
     default: vi.fn(function () {
@@ -72,7 +73,7 @@ function createMockEngine(name: string): IDatabaseEngine {
           port: entry.config.port,
           running: false,
         };
-      },
+      }
     ),
 
     listInstances: vi.fn(async (): Promise<DatabaseInstanceStatus[]> => {
@@ -130,7 +131,7 @@ describe("DatabaseRegistry", () => {
 
     it("throws for unknown engine", () => {
       expect(() => registry.findEngine("postgresql")).toThrow(
-        '"postgresql" is not registered',
+        '"postgresql" is not registered'
       );
     });
   });
@@ -164,7 +165,7 @@ describe("DatabaseRegistry", () => {
           version: "16",
           port: 5432,
           datadir: "/data",
-        }),
+        })
       ).rejects.toThrow('"postgresql" is not registered');
     });
   });
@@ -253,7 +254,7 @@ describe("DatabaseRegistry", () => {
       registry.register(mysql);
 
       await expect(registry.restoreInstances()).rejects.toThrow(
-        '"postgresql" is not registered',
+        '"postgresql" is not registered'
       );
     });
   });

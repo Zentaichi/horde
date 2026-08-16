@@ -4,4 +4,7 @@ export interface Project {
   path: string;
   phpVersion?: string;
   isPhpVersionInstalled?: boolean;
+  domains?: string[];
+  sslEnabled?: boolean;
+  proxyPort?: number;
 }
