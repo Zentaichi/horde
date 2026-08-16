@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Progress } from '@/shared/ui/progress';
-import type { DownloadProgress } from '@/shared/types/php';
+import { computed } from "vue";
+import { Progress } from "@/shared/ui/progress";
+import type { DownloadProgress } from "@/shared/types/php";
 
 const props = withDefaults(
   defineProps<{
@@ -10,7 +10,7 @@ const props = withDefaults(
   }>(),
   {
     startedAt: undefined,
-  },
+  }
 );
 
 const elapsed = computed(() => {
@@ -33,9 +33,12 @@ const eta = computed(() => {
 const showStats = computed(() => props.progress.totalBytes > 0);
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
@@ -54,17 +57,23 @@ const speedLabel = computed(() => {
 <template>
   <div class="w-full space-y-1.5">
     <Progress :model-value="progress.percent" class="h-2" />
-    <div class="flex justify-between text-xs text-muted-foreground">
-      <span>{{ progress.percent }}%</span>
-      <span v-if="showStats" class="flex items-center gap-1.5">
-        <span>{{ formatBytes(progress.transferredBytes) }} / {{ formatBytes(progress.totalBytes) }}</span>
+    <div class="flex justify-between gap-2 text-xs text-muted-foreground">
+      <span class="shrink-0">{{ progress.percent }}%</span>
+      <span
+        v-if="showStats"
+        class="flex items-center gap-1.5 min-w-0 whitespace-nowrap overflow-hidden"
+      >
+        <span class="truncate"
+          >{{ formatBytes(progress.transferredBytes) }} /
+          {{ formatBytes(progress.totalBytes) }}</span
+        >
         <template v-if="speedLabel">
-          <span aria-hidden="true">·</span>
-          <span>{{ speedLabel }}</span>
+          <span aria-hidden="true" class="shrink-0">·</span>
+          <span class="shrink-0">{{ speedLabel }}</span>
         </template>
         <template v-if="eta !== null && eta !== undefined">
-          <span aria-hidden="true">·</span>
-          <span>~{{ formatDuration(eta) }}</span>
+          <span aria-hidden="true" class="shrink-0">·</span>
+          <span class="shrink-0">~{{ formatDuration(eta) }}</span>
         </template>
       </span>
     </div>
