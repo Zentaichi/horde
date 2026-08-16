@@ -7,6 +7,13 @@ import type {
 import type { Project } from "@/shared/types/project";
 import type { DevServerStatus } from "@/shared/types/devserver";
 import type { ExtensionInfo } from "@/shared/types/extensions";
+import type {
+  Site,
+  SiteStatus,
+  ProxyStatus,
+  MkcertStatus,
+  ScaffoldTemplate,
+} from "@/shared/types/site";
 
 export {};
 
@@ -22,7 +29,7 @@ declare global {
         uninstallVersion: (version: string) => Promise<void>;
         onDownloadProgress: (
           version: string,
-          callback: (progress: DownloadProgress) => void,
+          callback: (progress: DownloadProgress) => void
         ) => () => void;
       };
       databases: {
@@ -51,17 +58,17 @@ declare global {
         exportDatabase: (
           instanceId: string,
           databaseName: string,
-          targetPath: string,
+          targetPath: string
         ) => Promise<void>;
         importDatabase: (
           instanceId: string,
           sourcePath: string,
-          databaseName: string,
+          databaseName: string
         ) => Promise<void>;
         onDownloadProgress: (
           engine: string,
           version: string,
-          callback: (progress: DbDownloadProgress) => void,
+          callback: (progress: DbDownloadProgress) => void
         ) => () => void;
       };
       settings: {
@@ -84,13 +91,43 @@ declare global {
         getLogs: (projectId: string, tail?: number) => Promise<string[]>;
         onLog: (
           projectId: string,
-          callback: (logs: string[]) => void,
+          callback: (logs: string[]) => void
         ) => () => void;
       };
       extensions: {
         list: (phpVersion: string) => Promise<ExtensionInfo[]>;
         enable: (phpVersion: string, extensionName: string) => Promise<void>;
         disable: (phpVersion: string, extensionName: string) => Promise<void>;
+      };
+      sites: {
+        list: () => Promise<Site[]>;
+        setDomains: (projectId: string, domains: string[]) => Promise<void>;
+        enableSsl: (projectId: string, enabled: boolean) => Promise<void>;
+        getStatus: () => Promise<SiteStatus>;
+      };
+      proxy: {
+        getStatus: () => Promise<ProxyStatus>;
+        start: () => Promise<void>;
+        stop: () => Promise<void>;
+        getLogs: (tail?: number) => Promise<string[]>;
+      };
+      mkcert: {
+        getStatus: () => Promise<MkcertStatus>;
+        install: () => Promise<void>;
+      };
+      scaffold: {
+        listTemplates: () => Promise<ScaffoldTemplate[]>;
+        create: (options: {
+          template: string;
+          name: string;
+          parentDir: string;
+        }) => Promise<void>;
+        onLog: (callback: (line: string) => void) => () => void;
+      };
+      cli: {
+        install: () => Promise<void>;
+        uninstall: () => Promise<void>;
+        isInstalled: () => Promise<boolean>;
       };
       autostart: {
         getServices: () => Promise<any[]>;

@@ -18,6 +18,7 @@
           <span class="ml-2">Rescan All</span>
         </Button>
         <AddProjectDialog :loading="loading" @add="onAddProject" />
+        <ScaffoldDialog @created="onScaffoldCreated" />
       </div>
     </div>
 
@@ -54,6 +55,7 @@ import { RefreshCw, X } from "@lucide/vue";
 import { Button } from "@/shared/ui/button";
 import ProjectList from "@/features/projects/components/ProjectList.vue";
 import AddProjectDialog from "@/features/projects/components/AddProjectDialog.vue";
+import ScaffoldDialog from "@/features/scaffold/components/ScaffoldDialog.vue";
 
 const store = useProjectStore();
 const { projects, loading, error } = storeToRefs(store);
@@ -89,5 +91,10 @@ async function onScanAll() {
 
 async function onRemove(projectId: string) {
   await store.removeProject(projectId);
+}
+
+async function onScaffoldCreated() {
+  await store.fetchProjects();
+  await devStore.fetchAll();
 }
 </script>

@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.invoke("php:uninstall-version", version),
     onDownloadProgress: (
       version: string,
-      callback: (progress: any) => void,
+      callback: (progress: any) => void
     ) => {
       const channel = `php:download-progress-${version}`;
       const listener = (_event: any, progress: any) => callback(progress);
@@ -55,29 +55,29 @@ contextBridge.exposeInMainWorld("electronAPI", {
     exportDatabase: (
       instanceId: string,
       databaseName: string,
-      targetPath: string,
+      targetPath: string
     ) =>
       ipcRenderer.invoke(
         "databases:export",
         instanceId,
         databaseName,
-        targetPath,
+        targetPath
       ),
     importDatabase: (
       instanceId: string,
       sourcePath: string,
-      databaseName: string,
+      databaseName: string
     ) =>
       ipcRenderer.invoke(
         "databases:import",
         instanceId,
         sourcePath,
-        databaseName,
+        databaseName
       ),
     onDownloadProgress: (
       engine: string,
       version: string,
-      callback: (progress: any) => void,
+      callback: (progress: any) => void
     ) => {
       const channel = `database:download-progress-${engine}-${version}`;
       const listener = (_event: any, progress: any) => callback(progress);
@@ -129,6 +129,40 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.invoke("extensions:enable", phpVersion, extensionName),
     disable: (phpVersion: string, extensionName: string) =>
       ipcRenderer.invoke("extensions:disable", phpVersion, extensionName),
+  },
+  sites: {
+    list: () => ipcRenderer.invoke("sites:list"),
+    setDomains: (projectId: string, domains: string[]) =>
+      ipcRenderer.invoke("sites:set-domains", projectId, domains),
+    enableSsl: (projectId: string, enabled: boolean) =>
+      ipcRenderer.invoke("sites:enable-ssl", projectId, enabled),
+    getStatus: () => ipcRenderer.invoke("sites:get-status"),
+  },
+  proxy: {
+    getStatus: () => ipcRenderer.invoke("proxy:get-status"),
+    start: () => ipcRenderer.invoke("proxy:start"),
+    stop: () => ipcRenderer.invoke("proxy:stop"),
+    getLogs: (tail?: number) => ipcRenderer.invoke("proxy:get-logs", tail),
+  },
+  mkcert: {
+    getStatus: () => ipcRenderer.invoke("mkcert:get-status"),
+    install: () => ipcRenderer.invoke("mkcert:install"),
+  },
+  scaffold: {
+    listTemplates: () => ipcRenderer.invoke("scaffold:list-templates"),
+    create: (options: { template: string; name: string; parentDir: string }) =>
+      ipcRenderer.invoke("scaffold:create", options),
+    onLog: (callback: (line: string) => void) => {
+      const channel = "scaffold:log";
+      const listener = (_event: any, line: string) => callback(line);
+      ipcRenderer.on(channel, listener);
+      return () => ipcRenderer.removeListener(channel, listener);
+    },
+  },
+  cli: {
+    install: () => ipcRenderer.invoke("cli:install"),
+    uninstall: () => ipcRenderer.invoke("cli:uninstall"),
+    isInstalled: () => ipcRenderer.invoke("cli:is-installed"),
   },
   autostart: {
     getServices: () => ipcRenderer.invoke("autostart:get-services"),
