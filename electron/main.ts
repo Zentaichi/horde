@@ -227,12 +227,14 @@ app.whenReady().then(async () => {
   serviceRegistry.registerProvider(caddyManager as unknown as IServiceProvider);
 
   const scaffolderManager = container.resolve(ScaffolderManager);
-  scaffolderManager.register(
-    container.resolve<IScaffolder>("IScaffolder:laravel")
-  );
-  scaffolderManager.register(
-    container.resolve<IScaffolder>("IScaffolder:symfony")
-  );
+  if (!isE2E) {
+    scaffolderManager.register(
+      container.resolve<IScaffolder>("IScaffolder:laravel")
+    );
+    scaffolderManager.register(
+      container.resolve<IScaffolder>("IScaffolder:symfony")
+    );
+  }
 
   const controlServer = new ControlServer(buildControlHandlers());
   await controlServer.start();
