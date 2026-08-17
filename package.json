@@ -82,7 +82,7 @@
     "electron-log": "^5.4.4",
     "execa": "^9.6.1",
     "fs-extra": "^11.3.6",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.3",
     "reflect-metadata": "^0.2.2",
     "reka-ui": "^2.10.1",
     "shadcn-vue": "^2.7.4",
