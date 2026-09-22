@@ -2,13 +2,13 @@
 
 This document lists the full feature set of Laravel Herd and DBngin, used as inspiration for Horde.
 
-| Icon | Meaning            |
-| ---- | ------------------ |
-| ✔️   | Done               |
-| 🔄   | In progress        |
-| ☑️   | Planned (post-MVP) |
+| Icon | Meaning                              |
+| ---- | ------------------------------------ |
+| ✔️   | Done                                 |
+| 🔄   | In progress                          |
+| ☑️   | Planned (tracked in the roadmap)     |
 
-> **Note:** Phase 4 is complete (local sites, HTTPS via mkcert + Caddy, quick-create, CLI companion). See the [roadmap](roadmap.md) for Phase 5+ plans.
+> **Note:** Phase 4 is complete (local sites, HTTPS via mkcert + Caddy, quick-create, CLI companion). Planned (☑️) items are tracked in the [roadmap](roadmap.md) Phase 5.
 
 ## PHP Management
 
@@ -22,14 +22,15 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | Edit `php.ini` directly in the app                 | ☑️     |
 | Run a local development server with a single click | ✔️     |
 | Built-in HTTPS via mkcert                          | ✔️     |
-| Auto-start a chosen PHP version at system boot     | ✔️     |
+| Auto-start services / the app at system boot       | ☑️     |
 
 ## Database Management
 
 | Feature                                                    | Status |
 | ---------------------------------------------------------- | ------ |
 | Download & install portable MySQL                          | ✔️     |
-| Start / Stop / Restart database service                    | ✔️     |
+| Start / Stop database service                              | ✔️     |
+| Restart database service (engine exists; no IPC/UI yet)    | ☑️     |
 | Create / Delete databases                                  | ✔️     |
 | Support for MariaDB, PostgreSQL                            | ✔️     |
 | Import / Export SQL dumps                                  | ✔️     |
@@ -61,3 +62,5 @@ This document lists the full feature set of Laravel Herd and DBngin, used as ins
 | Automatic cleanup of unused binary versions     | ☑️     |
 | JSON configuration file for settings sync       | ☑️     |
 | Notifications on service failures               | ☑️     |
+
+> All ☑️ items above are tracked in [roadmap](roadmap.md) Phase 5.

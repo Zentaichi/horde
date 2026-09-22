@@ -7,7 +7,7 @@
 
 ## Future Platform Goal
 
-Cross-platform support (macOS, Linux) is a stated goal but not in scope for the current phase. Architectural decisions made during Phase 1 seed the abstraction boundary (see [ADR-0004](adr/0004-platform-abstraction-boundary.md)) so that platform ports are additive, not rewrites.
+Cross-platform support (macOS, Linux) is a stated goal but not in scope for the current phase (tracked as Phase 6 in the [roadmap](roadmap.md)). Architectural decisions made during Phase 1 seed the abstraction boundary (see [ADR-0004](adr/0004-platform-abstraction-boundary.md)) so that platform ports are additive, not rewrites.
 
 ## Functional Requirements
 
@@ -18,25 +18,30 @@ Cross-platform support (macOS, Linux) is a stated goal but not in scope for the 
 - **FR1.3:** System displays a list of all installed PHP versions.
 - **FR1.4:** User can switch the global PHP version by updating the user's `PATH` environment variable.
 - **FR1.5:** UI shows the currently active global PHP version.
+- **FR1.6:** User can uninstall an installed PHP version.
 
-### FR2 — MySQL Portable Server
+### FR2 — Database Engine Suite
 
-- **FR2.1:** User can download a portable MySQL zip.
-- **FR2.2:** App initialises a data directory (`mysqld --initialize`).
-- **FR2.3:** User can start, stop, and restart the MySQL process.
-- **FR2.4:** Service status (running/stopped) is displayed in real time.
-- **FR2.5:** User can create and delete databases via the UI.
+- **FR2.1:** User can download portable database engine zips (MySQL, MariaDB, PostgreSQL) via `IPlatformAdapter` URL routing.
+- **FR2.2:** App initialises an instance data directory (`mysqld --initialize-insecure` for MySQL; engine-equivalent for MariaDB/PostgreSQL).
+- **FR2.3:** User can start, stop, and restart database instances.
+- **FR2.4:** Instance status (running/stopped) is displayed in real time.
+- **FR2.5:** User can create and delete databases via the UI (any engine).
+- **FR2.6:** User can import and export SQL dumps per database (engine-specific tools: `mysqldump`/`mysql`, `mariadb-dump`/`mariadb`, `pg_dump`/`psql`).
+- **FR2.7:** User can uninstall an installed engine version.
+- **FR2.8:** Multiple simultaneous instances run across different engines, versions, and ports (every IPC channel keys on `instanceId`).
 
 ### FR3 — Settings & Persistence
 
-- **FR3.1:** All user settings (download paths, port numbers, active versions, projects) are stored in a local SQLite database.
+- **FR3.1:** User settings (download paths, port numbers, active versions, projects) are stored in a local SQLite database. Theme preference stays in localStorage ([ADR-0008](adr/0008-settings-store-consolidation.md)).
 - **FR3.2:** Settings persist across app restarts.
 - **FR3.3:** Renderer has access to a generic `settings:get`/`settings:set` IPC channel for key-value preferences.
+- **FR3.4:** The SQLite schema evolves via a versioned migration mechanism (`PRAGMA user_version` — [ADR-0010](adr/0010-sqlite-migration-mechanism.md)).
 
 ### FR4 — User Interface
 
 - **FR4.1:** A dashboard shows the current status of PHP, databases, projects, and dev servers.
-- **FR4.2:** Separate pages for PHP, databases, and project management.
+- **FR4.2:** Separate pages for PHP, databases, project management, and sites.
 - **FR4.3:** Light/dark theme toggle.
 
 ### FR5 — Project Management
@@ -99,11 +104,14 @@ Cross-platform support (macOS, Linux) is a stated goal but not in scope for the 
 - **Reliability:** All critical operations (download, extraction, process start) must handle errors gracefully and log failures.
 - **Security:** Renderer process has no direct Node.js access; all system interactions go through typed IPC. The CLI control endpoint binds loopback only and requires a bearer token.
 - **Privileges:** The app runs without administrator privileges by default. Privileged operations (hosts edit, CA trust install, low-port binding where required) are user-initiated, elevated per-operation via `IPlatformAdapter`, and degrade gracefully when denied.
-- **Testability:** Core services are unit-testable in isolation via mock implementations of shared interfaces (`IPlatformAdapter`, `IRuntimeManager`, `IDatabaseEngine`). E2E tests use mock services behind an env-var gate.
-- **Forward-compatibility:** Service boundaries use shared interfaces (`IDatabaseEngine`, `IPlatformAdapter`, `IServiceProvider`, `IScaffolder`) so that Phase 3 database engines and Phase 6 platform ports add engines/platforms without refactoring Phase 1/2 code.
+- **Testability:** Core services are unit-testable in isolation via mock implementations of shared interfaces (`IPlatformAdapter`, `IRuntimeManager`, `IDatabaseEngine`). E2E tests use mock services behind an env-var gate (suite currently unstable; stabilization tracked in the roadmap).
+- **Forward-compatibility:** Service boundaries use shared interfaces (`IDatabaseEngine`, `IPlatformAdapter`, `IServiceProvider`, `IScaffolder`) so that new database engines and Phase 6 platform ports add engines/platforms without refactoring existing code.
 
-## Out of Scope (Current Phase)
+## Out of Scope (Phases 5–6)
 
-- Full `php.ini` text editor (extension toggling modifies ini programmatically)
+- Full `php.ini` text editor (extension toggling modifies ini programmatically) — Phase 5
+- Real-time query log viewer, automatic binary cleanup, JSON settings export, failure notifications — Phase 5
+- Settings page UI and auto-start configuration UI (plumbing exists; UI pending) — Phase 5
+- `databases:restart` IPC exposure (engine method exists; channel/UI pending) — Phase 5
 - macOS or Linux support (Phase 6)
-- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n (Phase 5)
+- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n, official website (Phase 5)
