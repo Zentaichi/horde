@@ -8,13 +8,13 @@ These run automatically in CI for every push to `master` and every PR. They must
 
 - [ ] **Lint** — `npm run lint` passes with no errors (src/, electron/, tests/)
 - [ ] **Typecheck** — `npm run typecheck` passes (vue-tsc for the renderer + `tsc` for the Electron main process)
-- [ ] **Unit tests** — `npm run test` passes (all 24 unit tests green)
+- [ ] **Unit tests** — `npm run test` passes (all unit tests green)
 - [ ] **Build** — `npm run build` produces `release/Horde Setup <version>.exe` without errors
 
 ## Manual verification
 
 - [ ] Launch `release/win-unpacked/Horde.exe` — app opens, dashboard renders, no blank window
-- [ ] Click through each page (PHP, Databases, Projects, Sites) — no crashes or blank pages
+- [ ] Click through each page (Dashboard, PHP, Databases, Projects, Sites) — no crashes or blank pages
 - [ ] Download and switch a PHP version; start/stop a MySQL instance; start a dev server
 - [ ] **Sites:** assign a domain to a project, apply, and confirm the hosts entry is present; start the project's dev server and confirm `http://<domain>` resolves through the proxy
 - [ ] **HTTPS:** install mkcert (accept the UAC prompt), enable HTTPS on a site, and confirm `https://<domain>` loads without certificate warnings

@@ -16,12 +16,12 @@ Because Horde is pre-1.0, every milestone (a completed roadmap phase) is treated
 | ------- | ------------------------------------- | ---------- |
 | 0.3.0   | Phase 1 — Core MVP                    | 2026-07-14 |
 | 0.4.0   | Phase 2 — Polish & Developer UX       | 2026-07-24 |
-| 0.5.0   | Phase 3 — Full Database Suite         | 2026-08-04 |
+| 0.5.0   | Phase 3 + Phase 2.5 (branding)        | 2026-08-04 |
 | 0.6.0   | Phase 4 — Advanced Herd-like Features | 2026-08-17 |
 
 ### Why there is no 0.1.0 or 0.2.0
 
-The repository's early history was exploratory: the initial commit declared version `1.0.0`, which was misleading for an unreleased scaffold. Rather than cut releases that did not exist, the first **real release** was cut when Phase 1 shipped, and the version was set to `0.3.0` to align with the Phase 1 roadmap item of the same number (0.1 → 0.2 → 0.3). Releases since then have been milestone-based. No `0.1.0`/`0.2.0` tags were ever cut, and this is intentional — tags are only created for actual releases.
+The repository's early history was exploratory: the initial commit declared version `1.0.0`, which was misleading for an unreleased scaffold. Rather than cut releases that did not exist, the first **real release** was cut when Phase 1 shipped and was set to `0.3.0` — skipping the unreleased `0.1.0`/`0.2.0` numbers rather than backfilling them. Releases since then have been milestone-based (one MINOR bump per completed roadmap phase). No `0.1.0`/`0.2.0` tags were ever cut, and this is intentional — tags are only created for actual releases.
 
 ## Tagging Convention
 

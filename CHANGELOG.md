@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Docs: reconcile documentation with shipped reality — restructured [docs/roadmap.md](docs/roadmap.md) (Phase 2.5 reordered chronologically, Phase 5 expanded into completeness/DX/community, E2E claims downgraded), refreshed the architecture IPC contract and directory trees, added missing FRs (multi-engine suite, import/export, uninstall, migrations), and fixed stale counts/claims across README, feature-parity, versioning, and the pre-release checklist
+
 ## [0.6.0] - 2026-08-17
 
 ### Added
@@ -93,7 +97,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Light/dark theme toggle
 - tsyringe DI container wiring service layer
 - Unit tests (Vitest), GitHub Actions CI building the Windows installer
-
-## [Unreleased] Notes
-
-> Only the sections above are released. Changes land in `[Unreleased]` until the next `v<minor>` tag.

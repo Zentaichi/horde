@@ -12,7 +12,7 @@
 ## Table of Contents
 
 - [Features](#features)
-- [Planned (Phase 4+)](#planned-phase-4)
+- [Planned (Phase 5+)](#planned-phase-5)
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
 - [Architecture](#architecture)
@@ -67,8 +67,9 @@
 
 ## Planned (Phase 5+)
 
-- Full `php.ini` text editor
-- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n
+- Completeness gaps: settings page UI, auto-start configuration UI, `databases:restart` exposure, E2E stabilization + CI
+- Full `php.ini` text editor, query log viewer, automatic binary cleanup, JSON settings export, failure notifications
+- Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n, official website
 - **macOS & Linux support** (Phase 6 — architecture seeded in Phase 1)
 
 Full feature tracking: [docs/feature-parity.md](docs/feature-parity.md)
@@ -102,12 +103,12 @@ electron/               # Main process
   preload.ts            # contextBridge (typed IPC)
   tray.ts               # System tray icon and context menu
   platform/             # OS-specific adapters
-    IPlatformAdapter.ts # Platform abstraction interface (15 methods)
+    IPlatformAdapter.ts # Platform abstraction interface
     win32/              # Windows implementation (PowerShell, reg query, setx)
   services/
     interfaces/         # Shared contracts
       IPhpManager.ts    # PHP service contract
-      IDatabaseEngine.ts # Multi-engine database contract (20 methods)
+      IDatabaseEngine.ts # Multi-engine database contract
       IProjectManager.ts # Project CRUD + .php-version scanning
       IDevServerManager.ts # Built-in dev server lifecycle
       IExtensionManager.ts # Bundled extension listing and toggling
@@ -125,13 +126,18 @@ electron/               # Main process
     extension-manager.ts  # Implements IExtensionManager
     database-registry.ts  # Multi-engine instance tracker + IServiceProvider
     service-registry.ts   # Aggregated service status
-    settings-store.ts     # SQLite persistence (settings, instances, projects)
+    settings-store.ts     # SQLite persistence (settings, instances, projects) + migrations
     mkcert-manager.ts     # HTTPS certificates
     caddy-manager.ts      # Reverse proxy (IServiceProvider)
     site-manager.ts       # Sites/domains orchestrator
     hosts-file.ts         # Hosts management with backup/conflict detection
     scaffolder-manager.ts # Quick-create registry
+    scaffolders/
+      composer-scaffolder.ts # Shared composer-based scaffold logic
+      laravel-scaffolder.ts  # Laravel template
+      symfony-scaffolder.ts  # Symfony template
     control-server.ts     # Loopback RPC endpoint for the CLI
+    control-commands.ts   # RPC handler map built from the DI container
   cli/
     main.ts               # Hidden Electron CLI entry
     commands/             # Pure, transport-agnostic command layer
@@ -149,10 +155,13 @@ electron/               # Main process
     scaffold.handlers.ts  # scaffold:* channels
     cli.handlers.ts       # cli:install/uninstall
     autostart.handlers.ts # autostart:* channels
+  utils/
+    download.ts           # Shared download utility
+    ports.ts              # Port probing / free-port scan
   types/
     php.ts              # PhpVersion, DownloadProgress
     database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
-    project.ts          # Project
+    project.ts          # Project (incl. domains/sslEnabled/proxyPort)
     devserver.ts        # DevServerStatus
     extension.ts        # ExtensionInfo
     site.ts             # Site, SiteStatus, MkcertStatus

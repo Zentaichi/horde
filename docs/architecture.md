@@ -19,7 +19,7 @@ Renderer (Vue 3)  <--IPC-->  Main Process (Node.js services)
 We chose **Feature Sliced Design** (FSD) because:
 
 1. **Isolation** — Every feature (PHP, MySQL) is a self-contained module with its own API layer, components, and composables. This prevents tight coupling and allows independent development/testing.
-2. **Scalability** — Adding PostgreSQL later means adding a new feature module `postgres/` that follows the same interface contracts; no existing code needs to change.
+2. **Scalability** — Adding a new database engine or PHP tooling feature means following the same interface contracts in the engine-agnostic `database/` module; no existing code needs to change.
 3. **Shared layer** keeps UI consistency (shadcn-vue components) while avoiding duplication.
 
 Adopted via [ADR-0001: Feature Sliced Design for Frontend](adr/0001-feature-sliced-design.md).
@@ -38,7 +38,7 @@ electron/               # Main process
   main.ts               # Entry point, DI container setup, window creation
   preload.ts            # contextBridge exposure
   platform/             # OS-specific implementations
-    IPlatformAdapter.ts # Platform abstraction interface (15 methods)
+    IPlatformAdapter.ts # Platform abstraction interface
     win32/
       Win32PlatformAdapter.ts
   services/
@@ -55,6 +55,8 @@ electron/               # Main process
       IScaffolder.ts
     php-manager.ts      # Implements IPhpManager
     mysql-manager.ts    # Implements IDatabaseEngine (MySQL)
+    mariadb-manager.ts  # Implements IDatabaseEngine (MariaDB)
+    pg-manager.ts       # Implements IDatabaseEngine (PostgreSQL)
     project-manager.ts  # Implements IProjectManager
     dev-server-manager.ts # Implements IDevServerManager + IServiceProvider
     extension-manager.ts  # Implements IExtensionManager
@@ -88,6 +90,8 @@ electron/               # Main process
     sites.handlers.ts
     scaffold.handlers.ts
     cli.handlers.ts
+    autostart.handlers.ts
+  tray.ts                 # System tray icon and context menu
   types/
     php.ts              # PhpVersion, DownloadProgress
     database.ts         # DatabaseInstanceConfig, DatabaseInstanceStatus
@@ -99,6 +103,7 @@ electron/               # Main process
     scaffold.ts         # ScaffoldOptions, ScaffoldTemplate
   utils/
     download.ts         # Shared download utility (single source)
+    ports.ts            # Port probing / free-port scan
 
 src/                    # Renderer process
   app/                  # Global setup, router, App shell
@@ -147,7 +152,7 @@ src/                    # Renderer process
 
 Main process services implement shared interfaces (`IPhpManager`, `IDatabaseEngine`). A lightweight DI container (`tsyringe`) manages dependencies and facilitates unit testing with mocked implementations.
 
-> **Status:** DI is fully wired (ADR-0002 implemented). `main.ts` registers `IPlatformAdapter`, `IPhpManager`, `IDatabaseEngine:mysql`, and `DatabaseRegistry` via `container.registerSingleton`. IPC handlers resolve services from the container. All services receive `IPlatformAdapter` via constructor injection.
+> **Status:** DI is fully wired (ADR-0002 implemented). `main.ts` registers `IPlatformAdapter`, `IPhpManager`, all three `IDatabaseEngine` implementations (mysql, mariadb, postgres), and `DatabaseRegistry` via `container.registerSingleton`. IPC handlers resolve services from the container. All services receive `IPlatformAdapter` via constructor injection.
 
 ### Service Boundaries
 
@@ -155,6 +160,8 @@ Main process services implement shared interfaces (`IPhpManager`, `IDatabaseEngi
 | ---------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PhpManager`           | `IPhpManager`                              | PHP version list/download/switch/uninstall, PATH manipulation                                                                                                                                                                          |
 | `MySqlManager`         | `IDatabaseEngine`                          | MySQL download/extract, instance initialize, start/stop process control, instance status                                                                                                                                               |
+| `MariaDbManager`       | `IDatabaseEngine`                          | MariaDB download/extract, instance initialize, start/stop process control, instance status                                                                                                                                             |
+| `PgManager`            | `IDatabaseEngine`                          | PostgreSQL download/extract, instance initialize, start/stop process control, instance status                                                                                                                                          |
 | `DatabaseRegistry`     | (concrete, singleton) + `IServiceProvider` | Multi-engine instance tracking, engine resolution by instanceId, implements `IServiceProvider` for tray/auto-start visibility                                                                                                          |
 | `ServiceRegistry`      | (concrete, singleton)                      | Aggregates status from all `IServiceProvider` instances. Used by tray and auto-start. Orphan process reattach on startup.                                                                                                              |
 | `ProjectManager`       | `IProjectManager`                          | Project CRUD, `.php-version` scanning (read-only), project persistence                                                                                                                                                                 |
@@ -172,7 +179,7 @@ All OS-coupled operations flow through `IPlatformAdapter` so that services never
 
 ### Engine Registry
 
-Database engines are registered by token. The DI container maps `'IDatabaseEngine:mysql'` to `MySqlManager`. `DatabaseRegistry` resolves all registered engines at startup and delegates instance lifecycle calls (start/stop/getStatus) to the correct engine by instanceId. This means Phase 3 adds PostgreSQL and MariaDB without changing any Phase 1/2 code. See [ADR-0003](adr/0003-multi-engine-database-abstraction.md).
+Database engines are registered by token. The DI container maps `'IDatabaseEngine:mysql'`, `'IDatabaseEngine:mariadb'`, and `'IDatabaseEngine:postgres'` to their implementations. `DatabaseRegistry` resolves all registered engines at startup and delegates instance lifecycle calls (start/stop/getStatus) to the correct engine by instanceId. New engines are additive — Phase 3 added PostgreSQL and MariaDB without changing any Phase 1/2 code. See [ADR-0003](adr/0003-multi-engine-database-abstraction.md).
 
 ## Platform Abstraction
 
@@ -187,7 +194,7 @@ All OS-coupled concerns are isolated behind `IPlatformAdapter`:
 - Privileged-operation elevation + CA trust install + low-port capability (Phase 4, [ADR-0011](adr/0011-privileged-operation-elevation.md))
 - CLI PATH shims and process-tree kill (Phase 4)
 
-The interface is defined now; only the Windows implementation is built for MVP. macOS and Linux implementations are deferred to Phase 6. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
+The interface is defined now and only the Windows implementation is built; macOS and Linux implementations are deferred to Phase 6. See [ADR-0004](adr/0004-platform-abstraction-boundary.md).
 
 ## IPC Contract
 
@@ -209,7 +216,7 @@ interface ElectronAPI {
   };
 
   databases: {
-    listEngines(): Promise<string[]>;
+    listEngines(): Promise<{ engine: string; displayName: string }[]>;
     listAvailable(engine: string): Promise<string[]>;
     listInstalled(engine: string): Promise<string[]>;
     download(engine: string, version: string): Promise<void>;
@@ -224,6 +231,16 @@ interface ElectronAPI {
     createDatabase(instanceId: string, name: string): Promise<void>;
     dropDatabase(instanceId: string, name: string): Promise<void>;
     listDatabases(instanceId: string): Promise<string[]>;
+    exportDatabase(
+      instanceId: string,
+      databaseName: string,
+      targetPath: string
+    ): Promise<void>;
+    importDatabase(
+      instanceId: string,
+      sourcePath: string,
+      databaseName: string
+    ): Promise<void>;
     onDownloadProgress(
       engine: string,
       version: string,
@@ -260,6 +277,14 @@ interface ElectronAPI {
     set(key: string, value: string): Promise<void>;
   };
 
+  autostart: {
+    getServices(): Promise<ServiceStatus[]>;
+    isEnabled(serviceId: string): Promise<boolean>;
+    toggle(serviceId: string, enabled: boolean): Promise<void>;
+    isBootEnabled(): Promise<boolean>;
+    toggleBoot(enabled: boolean): Promise<void>;
+  };
+
   sites: {
     list(): Promise<Site[]>;
     setDomains(projectId: string, domains: string[]): Promise<void>;
@@ -292,8 +317,12 @@ interface ElectronAPI {
   };
 
   openDirectory(path: string): Promise<void>;
+  showSaveDialog(options: SaveDialogOptions): Promise<string | null>;
+  showOpenDialog(options: OpenDialogOptions): Promise<string | null>;
 }
 ```
+
+> **Not exposed via preload:** `databases:restart` (engine-level `restart()` exists but no IPC channel), `proxy:set-routes`, and `autostart:start-service` are registered in the main process but absent from `preload.ts`. Tracked in the roadmap Phase 5.
 
 Key design decisions:
 
@@ -311,7 +340,7 @@ Key design decisions:
 
 ## Data Flow
 
-1. User clicks "Download PHP 8.2" → renderer calls `window.electronAPI.php.download(...)`.
+1. User clicks "Download PHP 8.2" → renderer calls `window.electronAPI.php.downloadVersion(...)`.
 2. IPC handler in main process resolves `IPhpManager` from the DI container.
 3. `PhpManager` delegates URL resolution and extraction to `IPlatformAdapter`, downloads via `Downloader`, and emits progress events back to the renderer via a push channel.
 4. On completion, main process writes the new version to SQLite and sends a `php:version-installed` event.
@@ -319,9 +348,9 @@ Key design decisions:
 
 ## Testing Strategy
 
-- **Unit tests**: Vitest for services, composables, and utilities. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces.
-- **Integration tests**: Test IPC handlers with a temporary SQLite database and a stubbed platform adapter.
-- **E2E tests**: Playwright + Electron launch; mock main process services to verify UI flows.
+- **Unit tests**: Vitest for services, composables, and utilities. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces. Current coverage: SettingsStore, HostsFile, DatabaseRegistry, database store, CLI command layer.
+- **Integration tests**: Planned — test IPC handlers with a temporary SQLite database and a stubbed platform adapter (not yet present).
+- **E2E tests**: Playwright + Electron launch with mock main-process services (`HORDE_E2E_TEST=1`). **The suite is currently unstable (mock-wiring incomplete) and is not wired into CI** — treat it as a manual smoke check. Stabilization is tracked in the roadmap Phase 5.
 
 ## Packaging & Distribution
 
@@ -346,3 +375,5 @@ We use `electron-builder` with NSIS for Windows. The installer bundles all Node.
 - [ADR-0015](adr/0015-cli-companion-architecture.md) — CLI companion architecture
 - [Requirements](requirements.md)
 - [Roadmap](roadmap.md)
+- [Feature parity](feature-parity.md)
+- [Versioning & releases](versioning.md)
