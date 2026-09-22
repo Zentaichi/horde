@@ -2,11 +2,11 @@
 
 This document lists the full feature set of Laravel Herd and DBngin, used as inspiration for Horde.
 
-| Icon | Meaning                              |
-| ---- | ------------------------------------ |
-| ✔️   | Done                                 |
-| 🔄   | In progress                          |
-| ☑️   | Planned (tracked in the roadmap)     |
+| Icon | Meaning                          |
+| ---- | -------------------------------- |
+| ✔️   | Done                             |
+| 🔄   | In progress                      |
+| ☑️   | Planned (tracked in the roadmap) |
 
 > **Note:** Phase 4 is complete (local sites, HTTPS via mkcert + Caddy, quick-create, CLI companion). Planned (☑️) items are tracked in the [roadmap](roadmap.md) Phase 5.
 

@@ -183,7 +183,7 @@ src/                    # Renderer process
   shared/               # Reusable UI kit (shadcn-vue), types, composables
 ```
 
-Key architectural decisions are documented as ADRs under [docs/adr/](docs/adr/):
+Key architectural decisions are documented as ADRs — see the [ADR index](docs/adr/README.md):
 
 | ADR                                                                        | Topic                                                 |
 | -------------------------------------------------------------------------- | ----------------------------------------------------- |
