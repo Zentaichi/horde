@@ -1,6 +1,6 @@
 # Contributing to Horde
 
-Thanks for your interest in contributing. This project follows Feature Sliced Design (frontend), a service layer with DI (backend), and a platform abstraction boundary. Please read the [architecture](docs/architecture.md) and [ADR index](docs/adr/) before making architectural changes.
+Thanks for your interest in contributing. This project follows Feature Sliced Design (frontend), a service layer with DI (backend), and a platform abstraction boundary. Please read the [architecture](docs/architecture.md) and the [ADR index](docs/adr/README.md) before making architectural changes.
 
 ## Getting Started
 
@@ -52,7 +52,7 @@ The same gates run in [CI](.github/workflows/ci.yml) on every push to `master` a
 ## Documentation
 
 - User-facing and architecture docs live in `docs/`.
-- Architectural decisions are recorded as ADRs under `docs/adr/` — add one when you introduce a new architectural decision.
+- Architectural decisions are recorded as ADRs under `docs/adr/` — add one when you introduce a new architectural decision (start from [docs/adr/template.md](docs/adr/template.md) and list it in the [ADR index](docs/adr/README.md)).
 - Update `CHANGELOG.md` (under `[Unreleased]`), `docs/feature-parity.md`, and `docs/roadmap.md` when your change affects features or the roadmap.
 
 ## Submitting Changes

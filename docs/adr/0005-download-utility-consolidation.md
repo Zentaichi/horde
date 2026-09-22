@@ -36,7 +36,7 @@ Services remain responsible for URL construction and post-download extraction. T
 - Must ensure the progress callback type is compatible with all consumers (already the case — `DownloadProgress` is the shared type)
 - The utility must handle `Content-Length: 0` (streaming without known size) gracefully — currently it suppresses progress events, which is correct behavior for all existing callers
 
-**Follow-up:**
+**Follow-up:** (all done — Phase 2)
 
 - Remove `downloadFile()` from `php-manager.ts` (L177-205)
 - Remove `downloadFile()` from `mysql-manager.ts` (L359-387)

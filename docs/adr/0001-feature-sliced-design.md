@@ -23,29 +23,33 @@ src/
 ```
 
 **Import rules:**
+
 - `pages/` → `features/`, `widgets/`, `entities/`, `shared/`
 - `features/` → `entities/`, `shared/` (never from other features)
 - `widgets/` → `entities/`, `features/`
 - `entities/` → nothing
 - `shared/` → nothing
 
-Each feature module is self-contained with its own API wrappers (calling `window.electronAPI`), components, and composables. Adding PostgreSQL later means creating `src/features/postgres/` without touching any existing code.
+Each feature module is self-contained with its own API wrappers (calling `window.electronAPI`), components, and composables. Adding PostgreSQL later means extending the existing feature modules without touching unrelated code. _(As shipped in Phase 3: database engines live in one engine-agnostic `database/` module — not a separate `postgres/` folder — with the engine selected at runtime.)_
 
 ## Consequences
 
 **Easier:**
+
 - Adding new database engines or runtime managers is a pure-add operation.
 - Features can be developed and tested in isolation.
 - UI consistency is enforced by the shared layer (single source of truth for design tokens, shadcn-vue components).
 
 **Harder:**
+
 - Developers must understand the layer hierarchy before contributing.
 - Cross-feature workflows (e.g., "show PHP info alongside MySQL status on a dashboard") must be wired through `widgets/`, not by importing across `features/`.
 - E2E tests necessarily span multiple layers.
 
-**Follow-up:**
+**Follow-up:** (done — Phase 2)
+
 - **Phase 2:** Enforce import rules via `eslint-plugin-boundaries`. Configured as a pre-implementation step (Step 0.4 in the Phase 2 execution plan), before any new feature modules are created, to prevent cross-feature imports from accumulating.
-- Audit `features/php/` and `features/database/` to ensure no cross-feature imports exist.
+- Audit `features/php/` and `features/database/` to ensure no cross-feature imports exist. (Enforced continuously by `eslint-plugin-boundaries` in CI.)
 
 ## Alternatives Considered
 

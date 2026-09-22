@@ -33,7 +33,7 @@ Use **Caddy** as the managed reverse proxy. `CaddyManager` implements `ICaddyMan
 
 - Caddy is a second large binary download on first use; failure mid-download is surfaced as a first-run setup error.
 - The admin API port is random per run and persisted; if the persisted port is stale after a crash, reattach relies on the HTTP-port probe.
-- No automatic Caddy version upgrades — an explicit maintenance path (like PHP/DB binaries) is a follow-up.
+- No automatic Caddy version upgrades — an explicit maintenance path (like PHP/DB binaries) is a follow-up (tracked in roadmap Phase 5).
 
 **Follow-up:**
 

@@ -9,6 +9,7 @@
 The main process must manage multiple service classes (PhpManager, MySqlManager, Downloader, SettingsStore, platform adapters) that have dependencies on each other and on OS-specific implementations. Manual `new` calls in `main.ts` create tight coupling and make unit testing difficult — services cannot be replaced with mocks without modifying production code.
 
 We need a pattern that:
+
 1. Allows services to declare their dependencies via constructor injection.
 2. Enables unit tests to swap real implementations for mocks.
 3. Supports registering new engines (PostgreSQL, MariaDB) without changing startup wiring.
@@ -19,6 +20,7 @@ We need a pattern that:
 Use **tsyringe** as the DI container with a **token-based registration pattern**.
 
 **Rules:**
+
 1. Every service exposes an interface (e.g., `IPhpManager`, `IDatabaseEngine`, `IPlatformAdapter`). The interface lives in `electron/services/interfaces/`.
 2. Concrete implementations are decorated with `@injectable()` and registered in `main.ts` via `container.register(token, { useClass: Impl })`.
 3. Services receive dependencies via constructor parameters decorated with `@inject(token)`.
@@ -28,17 +30,22 @@ Use **tsyringe** as the DI container with a **token-based registration pattern**
 **Container registration (conceptual `main.ts`):**
 
 ```ts
-import { container } from 'tsyringe';
-import { IPlatformAdapter } from './platform/IPlatformAdapter';
-import { Win32PlatformAdapter } from './platform/win32';
-import { IPhpManager } from './services/interfaces/IPhpManager';
-import { PhpManager } from './services/php-manager';
-import { IDatabaseEngine } from './services/interfaces/IDatabaseEngine';
-import { MySqlManager } from './services/mysql-manager';
+import { container } from "tsyringe";
+import { IPlatformAdapter } from "./platform/IPlatformAdapter";
+import { Win32PlatformAdapter } from "./platform/win32";
+import { IPhpManager } from "./services/interfaces/IPhpManager";
+import { PhpManager } from "./services/php-manager";
+import { IDatabaseEngine } from "./services/interfaces/IDatabaseEngine";
+import { MySqlManager } from "./services/mysql-manager";
 
-container.registerSingleton<IPlatformAdapter>('IPlatformAdapter', Win32PlatformAdapter);
-container.registerSingleton<IPhpManager>('IPhpManager', PhpManager);
-container.register<IDatabaseEngine>('IDatabaseEngine:mysql', { useClass: MySqlManager });
+container.registerSingleton<IPlatformAdapter>(
+  "IPlatformAdapter",
+  Win32PlatformAdapter
+);
+container.registerSingleton<IPhpManager>("IPhpManager", PhpManager);
+container.register<IDatabaseEngine>("IDatabaseEngine:mysql", {
+  useClass: MySqlManager,
+});
 ```
 
 Notice `IDatabaseEngine` uses a namespaced token (`IDatabaseEngine:mysql`) so that multiple engines can coexist under the same interface. A registry function returns all registered engine tokens.
@@ -46,15 +53,18 @@ Notice `IDatabaseEngine` uses a namespaced token (`IDatabaseEngine:mysql`) so th
 ## Consequences
 
 **Easier:**
+
 - Unit tests mock any dependency by passing a stub to the constructor.
 - Adding PostgreSQL means writing one class, decorating it, and registering it with token `IDatabaseEngine:postgresql`. Zero changes to existing services or `main.ts` beyond one new `container.register()` line.
 - Platform ports (macOS, Linux) swap `Win32PlatformAdapter` for `DarwinPlatformAdapter` at startup.
 
 **Harder:**
+
 - tsyringe requires `reflect-metadata` import and `experimentalDecorators`/`emitDecoratorMetadata` in tsconfig. These are stable TS features but add build configuration.
 - Debugging DI wiring issues requires understanding the container's resolution graph.
 
-**Follow-up:**
+**Follow-up:** (all done — Phase 1)
+
 - Add `tsyringe`, `reflect-metadata` to `package.json` dependencies.
 - Enable `experimentalDecorators` and `emitDecoratorMetadata` in `tsconfig.node.json`.
 - Refactor `PhpManager` to implement `IPhpManager` and receive `IPlatformAdapter` via constructor injection.

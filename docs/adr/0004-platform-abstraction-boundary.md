@@ -142,7 +142,7 @@ The interface grows again as Phase 4 introduces the most OS-coupled features yet
 | `installCliShim` / `uninstallCliShim` / `getCliInstallPath` | CLI on PATH                  | `.cmd` shim + PATH entry                         |
 | `killProcessTree(pid)`                                      | process-tree kill            | `taskkill /T /F`                                 |
 
-darwin/linux implementations are stubbed (`throw 'not implemented'`) and filled in Phase 6 — the interface grows, but the boundary never leaks into services.
+darwin/linux implementations do not exist yet (no stub adapters are checked in) and are filled in Phase 6 — the interface grows, but the boundary never leaks into services.
 
 ## Alternatives Considered
 

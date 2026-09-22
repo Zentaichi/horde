@@ -88,7 +88,7 @@ The auto-start feature reads this key on boot, resolves each service ID via `Ser
 
 ### 6. Dev server configs
 
-Either in-memory only (ephemeral, recreated each session) or persisted in a `dev_servers` table per ADR-0006. The decision depends on whether "restore dev server configs on restart" is valuable. For Phase 2, in-memory with an optional persist toggle is the recommended starting point.
+Either in-memory only (ephemeral, recreated each session) or persisted in a `dev_servers` table per ADR-0006. The decision depends on whether "restore dev server configs on restart" is valuable. For Phase 2, in-memory with an optional persist toggle is the recommended starting point. **Still unresolved** — dev servers remain in-memory; the decision is tracked in roadmap Phase 5.
 
 ## Consequences
 
@@ -104,7 +104,7 @@ Either in-memory only (ephemeral, recreated each session) or persisted in a `dev
 - SettingsStore is growing beyond "settings" into "all persistence." Renaming it to `PersistenceStore` would be more accurate but is a cosmetic change not worth the diff at this stage.
 - ~~No migration system exists for SQLite schema. Adding tables requires manual `CREATE TABLE IF NOT EXISTS` in `createTables()`. A Phase 5 concern.~~ **Superseded in Phase 4** by the migration mechanism in [ADR-0010](0010-sqlite-migration-mechanism.md) — `createTables()` now defines the base schema and an ordered `PRAGMA user_version`-backed runner evolves it (used to add Phase 4 project site fields).
 
-**Follow-up:**
+**Follow-up:** (all done — Phase 2, except as noted)
 
 - Add `settings:get` and `settings:set` IPC handlers
 - Add `projects` table to `SettingsStore.createTables()`
@@ -112,6 +112,7 @@ Either in-memory only (ephemeral, recreated each session) or persisted in a `dev
 - Update `PhpManager.switchGlobal()` to write active version cache
 - Add `settings` bindings to `preload.ts` and `src/types/electron.d.ts`
 - Delete the `ProgressInfo` type alias in `electron/utils/download.ts` (unrelated cleanup)
+- **Pending (roadmap Phase 5):** a Settings page UI — the `settings:*` channels exist but no renderer code calls them yet
 
 ## Alternatives Considered
 

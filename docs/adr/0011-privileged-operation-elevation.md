@@ -42,7 +42,7 @@ canBindLowPorts(): boolean;
 **Harder:**
 
 - `elevate()` is fire-and-wait; it cannot capture a long-running elevated process's stdout stream (acceptable — every Phase 4 use is a short, synchronous privileged write).
-- Windows UAC prompts once per privileged operation; a persistent elevated helper is a possible future optimization but out of scope now.
+- Windows UAC prompts once per privileged operation; a persistent elevated helper is a possible future optimization but out of scope now (untracked future option — no roadmap entry).
 - Cancelled/denied UAC surfaces as an error the caller must interpret into user-facing messaging.
 
 **Follow-up:**

@@ -76,7 +76,7 @@ On app startup, `ServiceRegistry.restoreAll()` iterates each provider's `reattac
 
 1. For each persisted instance config, check if a process is listening on the configured port (via `netstat -ano` on Windows, or a TCP connect check)
 2. If a process is found, extract its PID and reattach (set `process = null` but mark `running = true` in status output — we can't re-wrap an existing PID in a `ChildProcess`, but we can display it correctly)
-3. Optionally present the user with a "Reattach or kill?" dialog for each found orphan — but for Phase 2, silent reattach is sufficient
+3. Optionally present the user with a "Reattach or kill?" dialog for each found orphan — but for Phase 2, silent reattach is sufficient (dialog still unbuilt; tracked in roadmap Phase 5 if wanted)
 
 Note: On Windows, `taskkill /PID` still works for orphaned processes since we have the PID. A "Stop" action on a reattached instance sends the kill signal even though we don't own the `ChildProcess` reference.
 
@@ -98,11 +98,11 @@ await serviceRegistry.restoreAll();
 
 ### What consumes ServiceRegistry
 
-| Consumer        | How                                                                                                                                                         |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **System tray** | IPC handler calls `serviceRegistry.getAllStatuses()` to build tray menu with running/stopped indicators                                                     |
-| **Auto-start**  | Iterates `getAllStatuses()` on boot to launch services marked for auto-start                                                                                |
-| **Dashboard**   | In addition to individual stores (PhpStatusWidget, DatabaseStatusWidget), a `ServiceOverviewWidget` can display all services in one card using the registry |
+| Consumer        | How                                                                                                                                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System tray** | IPC handler calls `serviceRegistry.getAllStatuses()` to build tray menu with running/stopped indicators                                                                                                  |
+| **Auto-start**  | Iterates `getAllStatuses()` on boot to launch services marked for auto-start                                                                                                                             |
+| **Dashboard**   | In addition to individual stores (PhpStatusWidget, DatabaseStatusWidget), a `ServiceOverviewWidget` can display all services in one card using the registry (suggested; not built — see roadmap Phase 5) |
 
 ## Consequences
 

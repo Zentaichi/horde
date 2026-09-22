@@ -26,7 +26,7 @@ electron/cli/
 - **Transport (now):** HTTP to a `ControlServer` embedded in the running Horde app. The server binds `127.0.0.1` on a random port, authenticates every `POST /rpc` with a random bearer token, and publishes `{port, token}` to `~/.horde/control.json`. The CLI reads that file and fails fast with `AppNotRunningError` (exit 1, "Horde is not running") when the app is absent.
 - **Runtime (now):** the CLI runs via the app's bundled Electron (`Horde.exe <cli-main.js>`), a `.cmd` shim installed through `IPlatformAdapter.installCliShim()` and placed on PATH. No external Node dependency.
 - **Handlers:** `control-commands.ts` builds the RPC handler map from the DI container (`version`, `php-version`, `projects`, `sites`, `servers`), shared by the ControlServer.
-- **Future swap:** replacing the HTTP transport with an in-process/pipe/native transport requires touching only `transports/` and the shim — command logic is untouched.
+- **Future swap:** replacing the HTTP transport with an in-process/pipe/native transport requires touching only `transports/` and the shim — command logic is untouched. (Design seam only; no roadmap entry — adopt if startup latency becomes a problem.)
 
 ## Consequences
 

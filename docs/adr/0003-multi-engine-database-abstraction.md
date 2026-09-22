@@ -63,14 +63,18 @@ databases: {
 **DI registration uses namespaced tokens:**
 
 ```ts
-container.register<IDatabaseEngine>('IDatabaseEngine:mysql', { useClass: MySqlManager });
-container.register<IDatabaseEngine>('IDatabaseEngine:postgresql', { useClass: PostgreSqlManager });
+container.register<IDatabaseEngine>("IDatabaseEngine:mysql", {
+  useClass: MySqlManager,
+});
+container.register<IDatabaseEngine>("IDatabaseEngine:postgresql", {
+  useClass: PostgreSqlManager,
+});
 ```
 
 The IPC handler resolves the correct engine by token:
 
 ```ts
-ipcMain.handle('databases:start', async (_event, instanceId: string) => {
+ipcMain.handle("databases:start", async (_event, instanceId: string) => {
   const engine = resolveEngineByInstanceId(instanceId);
   await engine.start(instanceId);
 });
@@ -81,16 +85,19 @@ ipcMain.handle('databases:start', async (_event, instanceId: string) => {
 ## Consequences
 
 **Easier:**
+
 - Adding PostgreSQL in Phase 3 is ~100 lines of new class + 1 line of container registration + UI components. No changes to existing IPC channels, preload, or renderer stores.
 - Multiple simultaneous instances are supported from day one because every channel uses `instanceId`.
 - The DI container's engine registry supports runtime engine discovery.
 
 **Harder:**
+
 - Every database IPC handler must resolve the correct engine from the container, adding a lookup step.
 - The `DatabaseInstanceConfig` and `DatabaseInstanceStatus` types must carry an `engine` discriminator, which is slightly more verbose than engine-specific types.
 - Engine-specific features (e.g., MySQL's `CREATE USER` vs PostgreSQL's `CREATE ROLE`) must be exposed via engine-specific extension interfaces or omitted from the common contract.
 
-**Follow-up:**
+**Follow-up:** (all done — Phase 1/3)
+
 - Implement `IDatabaseEngine` interface file before writing `MySqlManager`.
 - Build `MySqlManager` against `IDatabaseEngine` from the start.
 - Write the engine registry helper that maps `instanceId` → engine token.

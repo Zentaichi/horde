@@ -27,7 +27,7 @@ Phase 2 Extension Manager is limited to **listing and toggling bundled extension
 interface ExtensionInfo {
   name: string;
   enabled: boolean;
-  bundled: true;   // always true in Phase 2; reserved for PECL in future phases
+  bundled: true; // always true in Phase 2; reserved for PECL in future phases
 }
 ```
 
@@ -40,11 +40,11 @@ interface ExtensionInfo {
 
 ### IPC Contract: `extensions:*` (3 channels)
 
-| Channel | Signature | Purpose |
-|---------|-----------|---------|
-| `extensions:list` | `(phpVersion: string) → ExtensionInfo[]` | List bundled extensions with enabled status |
-| `extensions:enable` | `(phpVersion: string, extensionName: string) → void` | Uncomment/append `extension=<name>` in `php.ini` |
-| `extensions:disable` | `(phpVersion: string, extensionName: string) → void` | Comment out `extension=<name>` in `php.ini` |
+| Channel              | Signature                                            | Purpose                                          |
+| -------------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| `extensions:list`    | `(phpVersion: string) → ExtensionInfo[]`             | List bundled extensions with enabled status      |
+| `extensions:enable`  | `(phpVersion: string, extensionName: string) → void` | Uncomment/append `extension=<name>` in `php.ini` |
+| `extensions:disable` | `(phpVersion: string, extensionName: string) → void` | Comment out `extension=<name>` in `php.ini`      |
 
 The `phpVersion` parameter is a version string like `"8.3.10"` — the handler resolves the binary path via `PhpManager`'s install directory.
 
@@ -57,9 +57,9 @@ One new method is needed to resolve extension file names per platform:
 resolveExtensionFileName(name: string): string;
 ```
 
-| Platform | `resolveExtensionFileName('curl')` returns |
-|----------|-------------------------------------------|
-| Windows | `php_curl.dll` |
+| Platform    | `resolveExtensionFileName('curl')` returns     |
+| ----------- | ---------------------------------------------- |
+| Windows     | `php_curl.dll`                                 |
 | macOS/Linux | `curl.so` (future, not implemented in Phase 2) |
 
 ### FSD Module Layout
@@ -82,27 +82,30 @@ The extension manager operates on a **selected PHP version**. The UI presents a 
 
 ### What's Explicitly Out of Scope
 
-| Deferred | Rationale |
-|----------|-----------|
-| PECL downloads and compilation | Requires build toolchains, dependency resolution, platform-specific binary hosting |
-| Dependency resolution (`curl` → `openssl`) | PECL concern |
-| Third-party extension repositories | PECL concern |
-| Extension configuration editing (beyond enable/disable) | The `php.ini` editor (separate Phase 2 item) handles full ini editing |
-| `php.ini` directive editing for extensions (e.g., `upload_max_filesize`) | Belongs to the `php.ini` editor, not extension manager |
+| Deferred                                                                 | Rationale                                                                          |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| PECL downloads and compilation                                           | Requires build toolchains, dependency resolution, platform-specific binary hosting |
+| Dependency resolution (`curl` → `openssl`)                               | PECL concern                                                                       |
+| Third-party extension repositories                                       | PECL concern                                                                       |
+| Extension configuration editing (beyond enable/disable)                  | The full `php.ini` editor (roadmap Phase 5) handles ini editing                    |
+| `php.ini` directive editing for extensions (e.g., `upload_max_filesize`) | Belongs to the `php.ini` editor (roadmap Phase 5), not extension manager           |
 
 ## Consequences
 
 **Easier:**
+
 - The entire extension manager is read-directory + parse-text-file + write-text-file — no network I/O, no compilation, no dependency graph
 - Native PHP commands provide all needed information (`PHP_EXTENSION_DIR`, `php_ini_loaded_file`) — no parsing of PHP source or build configs
 - The IPC surface is 3 channels: list, enable, disable
 
 **Harder:**
+
 - Users cannot install PECL extensions from the UI. They must use `pecl install` on the command line or wait for a future phase.
 - Parsing `php.ini` for `extension=` lines is fragile — the ini format has sections and conditional blocks (`[PHP]`, `[ExtensionList]`). We handle the common case (flat `extension=` lines) and gracefully skip sections. A full ini parser is overkill for enable/disable toggling.
 - The `php.ini` location varies (loaded file, scanned directory). We use `php_ini_loaded_file()` and fall back to `{installDir}/php.ini` if that returns empty (common for CLI-only PHP installs on Windows).
 
-**Follow-up:**
+**Follow-up:** (all done — Phase 2)
+
 - Add `resolveExtensionFileName` to `IPlatformAdapter`
 - Implement in `Win32PlatformAdapter`
 - Create `electron/types/extension.ts`
@@ -111,6 +114,10 @@ The extension manager operates on a **selected PHP version**. The UI presents a 
 - Create `electron/ipc/extensions.handlers.ts`
 - Add `extensions` bindings to `preload.ts` and `src/types/electron.d.ts`
 - Create `src/features/extensions/` module with store and components
+
+**Deferred (unassigned phase, tracked in roadmap Phase 5):**
+
+- PECL support
 
 ## Alternatives Considered
 

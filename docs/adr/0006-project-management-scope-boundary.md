@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 ```
 
-Dev server configs use a dedicated `dev_servers` table (optional — can be in-memory only for MVP; persistence enables restore on restart):
+Dev server configs can use a dedicated `dev_servers` table (optional — can be in-memory only; persistence enables restore on restart). **As shipped: in-memory only — no `dev_servers` table exists; the decision is tracked in roadmap Phase 5:**
 
 ```sql
 CREATE TABLE IF NOT EXISTS dev_servers (
@@ -164,13 +164,13 @@ CREATE TABLE IF NOT EXISTS dev_servers (
 - The "per-project PHP version" feature has no runtime effect at the terminal until Phase 4's `horde` CLI tool ships (it only affects the dev server and UI display)
 - The explicit scope boundary requires discipline — feature requests for domain mapping during Phase 2 must be deferred to Phase 4
 
-**Follow-up:**
+**Follow-up:** (done — Phase 2, except as noted)
 
 - Create `electron/types/project.ts` with the `Project` interface
 - Create `electron/services/interfaces/IProjectManager.ts`
 - Create `electron/services/project-manager.ts` (implements `IProjectManager`)
 - Create `electron/ipc/project.handlers.ts`
-- Add `projects` and `dev_servers` tables to `SettingsStore.createTables()`
+- Add `projects` table to `SettingsStore.createTables()` (`dev_servers` not created — see above; tracked in roadmap Phase 5)
 - Create `electron/services/interfaces/IDevServerManager.ts`
 - Create `electron/services/dev-server-manager.ts` (implements `IDevServerManager`, registers as `IServiceProvider` per ADR-0007)
 - Create `electron/ipc/devserver.handlers.ts`
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS dev_servers (
 ## Alternatives Considered
 
 - **Write `.php-version` files from the UI (full CRUD).**
-  - **Rejected because:** Adds file-write concerns (permissions, whitespace handling, conflict with existing files, trailing newlines) for marginal benefit. The user can `echo "8.2" > .php-version` in one command. Discovery-only defers the write path to Phase 4 if user demand warrants it, without painting us into a corner.
+  - **Rejected because:** Adds file-write concerns (permissions, whitespace handling, conflict with existing files, trailing newlines) for marginal benefit. The user can `echo "8.2" > .php-version` in one command. Discovery-only defers the write path if user demand warrants it, without painting us into a corner. **Not built in Phase 4; tracked in roadmap Phase 5.**
 - **Merge projects and dev servers into one feature module.**
   - **Rejected because:** Falls into the same coupling trap this ADR is designed to prevent. A monolithic `project-devserver-manager.ts` would need to change when Phase 4 adds domain management, and it would be harder to test either concern in isolation.
 - **Skip the project concept entirely — have the dev server accept raw directory paths.**
