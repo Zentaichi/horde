@@ -160,8 +160,8 @@ CREATE TABLE IF NOT EXISTS dev_servers (
 
 **Harder:**
 
-- Users cannot create `.php-version` files from the Horde UI — they must create them manually or via CLI
-- The "per-project PHP version" feature has no runtime effect at the terminal until Phase 4's `horde` CLI tool ships (it only affects the dev server and UI display)
+- Users cannot create `.php-version` files from the Horde UI — they create them manually (terminal or editor); neither the app nor the CLI writes them
+- The "per-project PHP version" feature has no runtime effect at the terminal until a CLI resolver ships — delivered in Phase 4 as `horde php-version` ([ADR-0015](0015-cli-companion-architecture.md))
 - The explicit scope boundary requires discipline — feature requests for domain mapping during Phase 2 must be deferred to Phase 4
 
 **Follow-up:** (done — Phase 2, except as noted)
