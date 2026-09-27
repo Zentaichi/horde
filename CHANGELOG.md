@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Aggregate service status in the app header — a 16px sigil beside the wordmark that reads dormant when nothing Horde manages is serving and risen when a database instance, dev server, or the reverse proxy is. Derived in the renderer from the Pinia stores, so no new IPC channel; the brand wordmark stays a static mark and is not itself the indicator
+- `ServiceSigil` gains an `animate` prop to suppress the 150ms transition, used by the header so a cold start cannot fake a state change
 - shadcn-vue `switch` primitive, used for the per-project HTTPS toggle
 - `DomainEditor` component — domains render as removable mono chips and commit on Enter or blur instead of behind an explicit **Apply**, so a comma-separated run is a single `setDomains` and therefore a single hosts-file write
 
@@ -17,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- The app header now fetches database instances, dev servers, and site status on mount to feed the aggregate sigil. This duplicates fetches the dashboard already performs; the alternative was a header that is only correct on one route
 - Sites page: the Reverse Proxy card gains a lifecycle sigil and a `Risen`/`Dormant` badge with its ports in mono, and all three raw green/grey status dots are gone. The mkcert card reports `Root CA trusted` / `Root CA not trusted` in plain words with the binary state as a separate line, and carries no sigil — a trusted root CA is an installed artefact, not a running service, so the three-state vocabulary does not apply to it. The CLI card likewise stays sigil-free
 - Sites page: the per-project HTTPS checkbox becomes a plain shadcn switch with a real `<label for>`, and is treated as the config toggle it is — no sigil, no state badge
 - Database Manager: each instance row now carries a lifecycle sigil and a `Risen`/`Dormant` badge, with the port and version in mono and the `Port` label dropped. The section header gains a `N running / M stopped` tally counted over the unfiltered instance list, so the count always matches what is on screen

@@ -10,11 +10,18 @@ const props = withDefaults(
     risen?: boolean;
     size?: SigilSize;
     label?: string;
+    /**
+     * Set false to suppress the 150ms colour transition, e.g. until the first
+     * fetch settles. Without it a surface that starts empty and then loads
+     * would fire a transition the user never caused.
+     */
+    animate?: boolean;
     class?: string;
   }>(),
   {
     risen: false,
     size: "md",
+    animate: true,
   }
 );
 
@@ -31,7 +38,8 @@ const px = computed(() => SIZES[props.size]);
   <span
     :class="
       cn(
-        'inline-flex shrink-0 items-center justify-center transition-[color,filter] duration-150 ease-out',
+        'inline-flex shrink-0 items-center justify-center',
+        props.animate && 'transition-[color,filter] duration-150 ease-out',
         props.risen ? 'text-ember' : 'text-dormant',
         props.class
       )

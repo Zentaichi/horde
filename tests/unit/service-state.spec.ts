@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   STATE_COPY,
+  aggregateState,
   devServerState,
   instanceState,
   phpState,
@@ -92,5 +93,35 @@ describe("proxyState", () => {
   it("is never absent, since the proxy binary is always managed", () => {
     expect(proxyState(true)).toBe("risen");
     expect(proxyState(false)).toBe("dormant");
+  });
+});
+
+describe("aggregateState", () => {
+  const none = {
+    databaseRunning: 0,
+    devServerRunning: 0,
+    proxyRunning: false,
+  };
+
+  it("is dormant only when every member is idle", () => {
+    expect(aggregateState(none)).toBe("dormant");
+  });
+
+  it("is risen when any single member is serving", () => {
+    expect(aggregateState({ ...none, databaseRunning: 1 })).toBe("risen");
+    expect(aggregateState({ ...none, devServerRunning: 1 })).toBe("risen");
+    expect(aggregateState({ ...none, proxyRunning: true })).toBe("risen");
+  });
+
+  it("is never absent, because Horde always manages the proxy", () => {
+    // Not even with nothing installed or running: there is no such state.
+    expect(aggregateState(none)).not.toBe("absent");
+  });
+
+  it("has a dormant tier even though dev servers individually do not", () => {
+    // The aggregate is a group, not a service, so "installed but idle" is
+    // meaningful here in a way it is not for a single dev server.
+    expect(aggregateState(none)).toBe("dormant");
+    expect(devServerState(false)).toBe("absent");
   });
 });

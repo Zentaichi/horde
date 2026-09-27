@@ -10,6 +10,13 @@
           Horde
         </router-link>
 
+        <ServiceSigil
+          size="sm"
+          :risen="state === 'risen'"
+          :animate="ready"
+          :label="sigilLabel"
+        />
+
         <div class="flex items-center gap-1 ml-2">
           <router-link
             to="/dashboard"
@@ -60,6 +67,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, computed } from "vue";
 import ThemeToggle from "@/shared/ui/ThemeToggle.vue";
 import HordeLogo from "@/shared/ui/HordeLogo.vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import { useAggregateStatus } from "@/app/composables/useAggregateStatus";
+
+const { state, ready, refresh } = useAggregateStatus();
+
+// The header sigil is the one place ember is aggregate rather than local, so
+// it carries its own accessible name: there is no visible text beside it.
+const sigilLabel = computed(() =>
+  state.value === "risen"
+    ? "At least one Horde service is running"
+    : "No Horde services are running"
+);
+
+onMounted(refresh);
 </script>

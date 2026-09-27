@@ -46,3 +46,31 @@ export function devServerState(running: boolean): ServiceState {
 export function proxyState(running: boolean): ServiceState {
   return running ? "risen" : "dormant";
 }
+
+export interface AggregateInput {
+  databaseRunning: number;
+  devServerRunning: number;
+  proxyRunning: boolean;
+}
+
+/**
+ * Header aggregate: is *anything* Horde manages currently serving?
+ *
+ * Membership is database instances, dev servers, and the reverse proxy. A
+ * selected global PHP version is deliberately excluded -- it is risen locally
+ * on the Projects surface, but PHP is not a running service, so counting it
+ * would light the global sigil for something that is merely configured.
+ *
+ * Never `absent`. Horde always manages the proxy, so "nothing at all is
+ * installed" is not a state this app can be in; the same reasoning that keeps
+ * `proxyState` from ever returning `absent` applies here. The aggregate is a
+ * group, not a service, so it *does* have a dormant tier even though dev
+ * servers individually do not.
+ */
+export function aggregateState(input: AggregateInput): ServiceState {
+  const anyRunning =
+    input.databaseRunning > 0 ||
+    input.devServerRunning > 0 ||
+    input.proxyRunning;
+  return anyRunning ? "risen" : "dormant";
+}
