@@ -2,7 +2,7 @@
   <PageContainer class="flex flex-col">
     <div class="shrink-0">
       <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
-      <p class="text-sm text-muted-foreground">
+      <p class="text-base text-muted-foreground">
         Resurrect and animate your dev services
       </p>
     </div>

@@ -12,7 +12,10 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight, Circle, Database } from "@lucide/vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { instanceState, type ServiceState } from "@/shared/lib/serviceState";
+import { ArrowRight } from "@lucide/vue";
 
 const store = useDatabaseStore();
 const { instances } = storeToRefs(store);
@@ -24,11 +27,17 @@ onMounted(async () => {
 });
 
 const runningCount = computed(
-  () => instances.value.filter((i) => i.running).length,
+  () => instances.value.filter((i) => i.running).length
 );
 
 const runningInstances = computed(() =>
-  instances.value.filter((i) => i.running),
+  instances.value.filter((i) => i.running)
+);
+
+const state = computed((): ServiceState =>
+  instances.value.length === 0
+    ? "absent"
+    : instanceState(runningCount.value > 0)
 );
 </script>
 
@@ -36,18 +45,11 @@ const runningInstances = computed(() =>
   <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
       <CardTitle class="flex items-center gap-2 text-base">
-        <Database
-          :class="runningCount > 0 ? 'text-[#F97316]' : 'text-muted-foreground'"
-          class="size-4"
-        />
+        <ServiceSigil :risen="state === 'risen'" size="md" />
         Databases
       </CardTitle>
       <CardDescription>
-        <template v-if="runningCount > 0">
-          Risen:
-          <span class="font-medium text-foreground">{{ runningCount }}</span>
-        </template>
-        <template v-else> Dormant </template>
+        <ServiceStatus :state="state" size="sm" :show-sigil="false" />
       </CardDescription>
     </CardHeader>
 
@@ -58,11 +60,14 @@ const runningInstances = computed(() =>
           :key="inst.instanceId"
           class="flex items-center gap-1.5 text-sm"
         >
-          <Circle class="size-1.5 text-green-500 fill-green-500" />
+          <ServiceSigil :risen="true" size="sm" />
           <span class="font-medium"
-            >{{ inst.displayName || inst.engine }} {{ inst.version }}</span
+            >{{ inst.displayName || inst.engine }}
+            <span class="font-mono">{{ inst.version }}</span></span
           >
-          <span class="text-muted-foreground">@ :{{ inst.port }}</span>
+          <span class="text-muted-foreground font-mono"
+            >@ :{{ inst.port }}</span
+          >
         </div>
       </div>
       <p v-else class="text-sm text-muted-foreground">

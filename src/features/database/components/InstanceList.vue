@@ -1,7 +1,16 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-xl font-semibold">Instances</h2>
+      <div class="flex items-baseline gap-2">
+        <h2 class="text-xl font-semibold">Instances</h2>
+        <span
+          v-if="instances.length > 0"
+          class="text-xs text-muted-foreground"
+          data-testid="instance-tally"
+        >
+          {{ runningCount }} running / {{ stoppedCount }} stopped
+        </span>
+      </div>
       <Button
         variant="outline"
         size="sm"
@@ -58,24 +67,23 @@
     <div v-if="instances.length > 0" class="space-y-3">
       <Card v-for="instance in instances" :key="instance.instanceId">
         <CardContent class="p-4">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
-              <Circle
-                :class="
-                  instance.running
-                    ? 'text-green-500 fill-green-500'
-                    : 'text-muted-foreground'
-                "
-                class="size-2.5 shrink-0"
+              <ServiceSigil
+                :risen="instance.running"
+                size="sm"
+                class="shrink-0"
               />
               <div class="min-w-0">
                 <div class="font-semibold text-sm truncate">
                   {{ instance.displayName || instance.engine }}
-                  {{ instance.version }}
+                  <span class="font-mono font-normal text-muted-foreground">{{
+                    instance.version
+                  }}</span>
                 </div>
                 <div class="text-xs text-muted-foreground">
-                  Port {{ instance.port }}
-                  <span v-if="instance.label">— {{ instance.label }}</span>
+                  <span class="font-mono">:{{ instance.port }}</span>
+                  <span v-if="instance.label"> — {{ instance.label }}</span>
                 </div>
               </div>
             </div>
@@ -101,6 +109,10 @@
                 </Button>
               </template>
               <template v-else>
+                <ServiceStatus
+                  :state="instanceState(instance.running)"
+                  size="sm"
+                />
                 <Button
                   v-if="instance.running"
                   variant="outline"
@@ -119,21 +131,22 @@
                 </Button>
                 <Button
                   v-if="instance.running"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  class="text-xs"
+                  class="text-xs text-muted-foreground"
                   @click="onImport(instance.instanceId)"
                 >
                   Import
                 </Button>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon-sm"
                   class="text-muted-foreground hover:text-destructive"
                   :disabled="instance.running"
+                  title="Delete instance"
                   @click="confirmingDelete = instance.instanceId"
                 >
-                  Delete
+                  <Trash2 class="size-3.5" />
                 </Button>
               </template>
             </div>
@@ -245,12 +258,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useDatabaseStore } from "../stores/databaseStore";
 import { storeToRefs } from "pinia";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Circle, Database, Loader, Plus, Trash2, Download } from "@lucide/vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { instanceState } from "@/shared/lib/serviceState";
+import { Database, Loader, Plus, Trash2, Download } from "@lucide/vue";
 
 const props = defineProps<{
   engine: string;
@@ -271,12 +287,18 @@ const newDbName = ref("");
 const creatingDb = ref<string | null>(null);
 const droppingDb = ref<string | null>(null);
 
-watch(
-  instances,
-  () => {
-    databases;
-  },
-  { deep: true },
+/**
+ * The tally is global, not per-engine, because this list renders the store's
+ * unfiltered `instances` array -- which is what `listInstances()` returns. The
+ * engine prop only scopes the create form, not the list. Counting the array we
+ * actually render is the honest option; filtering it would be a behaviour
+ * change, not a restyle.
+ */
+const runningCount = computed(
+  () => instances.value.filter((i) => i.running).length
+);
+const stoppedCount = computed(
+  () => instances.value.length - runningCount.value
 );
 
 async function loadDatabases(instanceId: string) {

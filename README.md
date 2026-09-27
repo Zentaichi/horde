@@ -169,7 +169,7 @@ electron/               # Main process
     scaffold.ts         # ScaffoldOptions, ScaffoldTemplate
 
 src/                    # Renderer process
-  app/                  # Global setup, router, App shell
+  app/                  # Global setup, router, App shell, app-scoped composables
   pages/                # Route-level components (Dashboard, PHP, Databases, Projects, Sites)
   features/
     php/                # PHP feature module (store, components)
@@ -177,10 +177,10 @@ src/                    # Renderer process
     projects/           # Project management (store, components)
     devserver/          # Dev server (store, components)
     extensions/         # Extension manager (store, components)
-    sites/              # Site/domain management (store)
+    sites/              # Site/domain management (store, components)
     scaffold/           # Project quick-create (store, components)
   widgets/              # Cross-feature compositions (status cards: PHP, DB, Projects, Dev Server)
-  shared/               # Reusable UI kit (shadcn-vue), types, composables
+  shared/               # Reusable UI kit (shadcn-vue + Horde primitives), types, pure state helpers
 ```
 
 Key architectural decisions are documented as ADRs — see the [ADR index](docs/adr/README.md):

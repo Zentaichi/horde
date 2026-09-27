@@ -110,9 +110,11 @@ export class SiteManager implements ISiteManager {
     const sites = this.list();
     const allDomains = sites.flatMap((s) => s.domains);
 
-    if (allDomains.length > 0) {
-      await this.hosts.syncDomains(allDomains);
-    }
+    // Always sync, including the empty case. `syncDomains([])` is the call
+    // that clears our tagged hosts entries, so guarding it on a non-empty
+    // list left a stale entry behind when the last domain was removed while
+    // the Caddy route below was still dropped. It no-ops when nothing changed.
+    await this.hosts.syncDomains(allDomains);
 
     const routes: ProxyRoute[] = [];
     for (const site of sites) {

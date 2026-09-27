@@ -1,0 +1,56 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import HordeLogo from "./HordeLogo.vue";
+import { cn } from "@/shared/lib/utils";
+
+type SigilSize = "sm" | "md" | "lg";
+
+const props = withDefaults(
+  defineProps<{
+    risen?: boolean;
+    size?: SigilSize;
+    label?: string;
+    /**
+     * Set false to suppress the 150ms colour transition, e.g. until the first
+     * fetch settles. Without it a surface that starts empty and then loads
+     * would fire a transition the user never caused.
+     */
+    animate?: boolean;
+    class?: string;
+  }>(),
+  {
+    risen: false,
+    size: "md",
+    animate: true,
+  }
+);
+
+const SIZES: Record<SigilSize, number> = {
+  sm: 16,
+  md: 22,
+  lg: 30,
+};
+
+const px = computed(() => SIZES[props.size]);
+</script>
+
+<template>
+  <span
+    :class="
+      cn(
+        'inline-flex shrink-0 items-center justify-center',
+        props.animate && 'transition-[color,filter] duration-150 ease-out',
+        props.risen ? 'text-ember' : 'text-dormant',
+        props.class
+      )
+    "
+    :style="
+      props.risen ? { filter: 'drop-shadow(var(--ember-glow))' } : undefined
+    "
+    :aria-hidden="props.label ? undefined : true"
+    :aria-label="props.label"
+    :role="props.label ? 'img' : undefined"
+  >
+    <HordeLogo :size="px" />
+  </span>
+</template>

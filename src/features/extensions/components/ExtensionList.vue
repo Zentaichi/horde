@@ -29,16 +29,23 @@
           <span class="text-sm font-medium">{{ ext.name }}</span>
           <Badge variant="secondary" class="text-xs">bundled</Badge>
         </div>
-        <button
-          @click="$emit('toggle', ext.name, !ext.enabled)"
-          class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-          :class="ext.enabled ? 'bg-primary' : 'bg-muted'"
-        >
-          <span
-            class="inline-block size-3.5 rounded-full bg-background transition-transform"
-            :class="ext.enabled ? 'translate-x-[18px]' : 'translate-x-[3px]'"
-          />
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-xs text-muted-foreground w-14 text-right">
+            {{ ext.enabled ? "Enabled" : "Disabled" }}
+          </span>
+          <button
+            @click="$emit('toggle', ext.name, !ext.enabled)"
+            class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+            :class="ext.enabled ? 'bg-primary' : 'bg-muted'"
+            :aria-pressed="ext.enabled"
+            :aria-label="`Toggle ${ext.name}`"
+          >
+            <span
+              class="inline-block size-3.5 rounded-full bg-background transition-transform"
+              :class="ext.enabled ? 'translate-x-[18px]' : 'translate-x-[3px]'"
+            />
+          </button>
+        </div>
       </div>
     </div>
   </div>
