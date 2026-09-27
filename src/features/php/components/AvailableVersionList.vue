@@ -6,7 +6,8 @@
       <VersionCard
         v-for="version in versions"
         :key="version"
-        :name="`PHP ${version}`"
+        :label="'PHP'"
+        :version="version"
         :installed="isInstalled(version)"
         :downloading="isDownloading(version)"
         :progress="downloadProgress[version]"

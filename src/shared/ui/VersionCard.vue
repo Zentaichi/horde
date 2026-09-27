@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { Card, CardContent } from "@/shared/ui/card";
-import { Badge } from "@/shared/ui/badge";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
 import { Button } from "@/shared/ui/button";
 import ProgressBar from "@/shared/ui/ProgressBar.vue";
 import { FolderOpen } from "@lucide/vue";
@@ -9,7 +9,8 @@ import type { DownloadProgress } from "@/shared/types/php";
 
 withDefaults(
   defineProps<{
-    name: string;
+    label: string;
+    version: string;
     installed: boolean;
     downloading: boolean;
     progress?: DownloadProgress;
@@ -35,10 +36,16 @@ const confirmingUninstall = ref(false);
     <CardContent class="p-4">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2 min-w-0">
-          <span class="font-semibold truncate">{{ name }}</span>
-          <Badge v-if="installed" variant="secondary" class="shrink-0">
-            Installed
-          </Badge>
+          <span class="font-semibold truncate">{{ label }}</span>
+          <span class="font-mono text-sm text-muted-foreground">{{
+            version
+          }}</span>
+          <ServiceStatus
+            v-if="installed"
+            state="dormant"
+            size="sm"
+            class="shrink-0"
+          />
         </div>
 
         <div class="flex items-center gap-2 shrink-0 ml-4">

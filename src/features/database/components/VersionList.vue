@@ -6,7 +6,8 @@
       <VersionCard
         v-for="version in versions"
         :key="version"
-        :name="`${store.engineDisplayName(engine)} ${version}`"
+        :label="store.engineDisplayName(engine)"
+        :version="version"
         :installed="isInstalled(version)"
         :downloading="isDownloading(version)"
         :progress="downloadProgress[store.progressKey(engine, version)]"
