@@ -1,0 +1,97 @@
+import { describe, expect, it } from "vitest";
+import {
+  STATE_COPY,
+  devServerState,
+  instanceState,
+  phpState,
+  proxyState,
+  stateLabel,
+  versionState,
+} from "@/shared/lib/serviceState";
+
+describe("serviceState vocabulary", () => {
+  it("exposes exactly three states with the agreed copy", () => {
+    expect(Object.keys(STATE_COPY).sort()).toEqual([
+      "absent",
+      "dormant",
+      "risen",
+    ]);
+    expect(STATE_COPY.absent).toBe("Not installed");
+    expect(STATE_COPY.dormant).toBe("Dormant");
+    expect(STATE_COPY.risen).toBe("Risen");
+  });
+
+  it("retired words never reappear in the copy", () => {
+    const copy = Object.values(STATE_COPY).join(" ").toLowerCase();
+    for (const retired of [
+      "active",
+      "running",
+      "stopped",
+      "installed version",
+    ]) {
+      expect(copy).not.toContain(retired);
+    }
+  });
+});
+
+describe("stateLabel", () => {
+  it("returns the bare state word when there is no context", () => {
+    expect(stateLabel("absent")).toBe("Not installed");
+    expect(stateLabel("dormant")).toBe("Dormant");
+    expect(stateLabel("risen")).toBe("Risen");
+  });
+
+  it("appends context only for a risen state", () => {
+    expect(stateLabel("risen", "8.4.24")).toBe("Risen · 8.4.24");
+    expect(stateLabel("risen", ":3306")).toBe("Risen · :3306");
+    expect(stateLabel("dormant", "8.4.24")).toBe("Dormant");
+    expect(stateLabel("absent", "8.4.24")).toBe("Not installed");
+  });
+
+  it("treats an empty context as no context", () => {
+    expect(stateLabel("risen", "")).toBe("Risen");
+  });
+});
+
+describe("phpState", () => {
+  it("is risen once a global version is selected", () => {
+    expect(phpState("8.4.24", 3)).toBe("risen");
+  });
+
+  it("is dormant when versions are installed but none is global", () => {
+    expect(phpState(null, 1)).toBe("dormant");
+  });
+
+  it("is absent when nothing is installed, not dormant", () => {
+    expect(phpState(null, 0)).toBe("absent");
+  });
+});
+
+describe("versionState", () => {
+  it("is dormant when installed and absent otherwise", () => {
+    expect(versionState(true)).toBe("dormant");
+    expect(versionState(false)).toBe("absent");
+  });
+});
+
+describe("instanceState", () => {
+  it("is risen only while running", () => {
+    expect(instanceState(true)).toBe("risen");
+    expect(instanceState(false)).toBe("dormant");
+  });
+});
+
+describe("devServerState", () => {
+  it("distinguishes all three states", () => {
+    expect(devServerState(true, true)).toBe("risen");
+    expect(devServerState(true, false)).toBe("dormant");
+    expect(devServerState(false, false)).toBe("absent");
+  });
+});
+
+describe("proxyState", () => {
+  it("is never absent, since the proxy binary is always managed", () => {
+    expect(proxyState(true)).toBe("risen");
+    expect(proxyState(false)).toBe("dormant");
+  });
+});
