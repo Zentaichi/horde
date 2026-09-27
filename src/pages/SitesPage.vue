@@ -28,23 +28,27 @@
         <Card>
           <CardHeader>
             <CardTitle class="text-base flex items-center gap-2">
-              <span
-                class="size-2.5 rounded-full"
-                :class="proxyRunning ? 'bg-green-500' : 'bg-gray-400'"
-              ></span>
+              <ServiceSigil :risen="proxyRunning" size="sm" class="shrink-0" />
               Reverse Proxy
             </CardTitle>
             <CardDescription>
-              {{
-                proxyRunning
-                  ? `Running on :${proxy?.port} (https :${proxy?.httpsPort})`
-                  : "Stopped"
-              }}
+              <ServiceStatus
+                v-if="status"
+                :state="proxyState(proxyRunning)"
+                size="sm"
+                :show-sigil="false"
+              />
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <p
+              v-if="status"
+              class="text-xs text-muted-foreground font-mono mb-3"
+            >
+              :{{ proxy?.port }} · https :{{ proxy?.httpsPort }}
+            </p>
             <Button
-              v-if="proxyRunning"
+              v-if="status && proxyRunning"
               variant="outline"
               size="sm"
               :disabled="loading"
@@ -53,7 +57,7 @@
               Stop
             </Button>
             <Button
-              v-else
+              v-else-if="status"
               size="sm"
               :disabled="loading"
               @click="siteStore.startProxy()"
@@ -63,22 +67,27 @@
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-testid="ca-card">
           <CardHeader>
-            <CardTitle class="text-base flex items-center gap-2">
-              <span
-                class="size-2.5 rounded-full"
-                :class="caInstalled ? 'bg-green-500' : 'bg-gray-400'"
-              ></span>
-              HTTPS (mkcert)
-            </CardTitle>
+            <CardTitle class="text-base">HTTPS (mkcert)</CardTitle>
             <CardDescription>
-              {{ caInstalled ? "Root CA trusted" : "Root CA not installed" }}
+              {{ caInstalled ? "Root CA trusted" : "Root CA not trusted" }}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <p
+              v-if="status"
+              class="text-xs text-muted-foreground mb-3"
+              data-testid="mkcert-binary"
+            >
+              {{
+                binaryInstalled
+                  ? "mkcert binary installed"
+                  : "mkcert binary not installed"
+              }}
+            </p>
             <Button
-              v-if="!caInstalled"
+              v-if="status && !caInstalled"
               size="sm"
               :disabled="loading"
               @click="siteStore.installHttps()"
@@ -90,13 +99,7 @@
 
         <Card>
           <CardHeader>
-            <CardTitle class="text-base flex items-center gap-2">
-              <span
-                class="size-2.5 rounded-full"
-                :class="cliInstalled ? 'bg-green-500' : 'bg-gray-400'"
-              ></span>
-              CLI Companion
-            </CardTitle>
+            <CardTitle class="text-base">CLI Companion</CardTitle>
             <CardDescription>
               {{ cliInstalled ? "horde command installed" : "Not installed" }}
             </CardDescription>
@@ -140,36 +143,27 @@
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
                 <div class="font-medium truncate">{{ project.name }}</div>
-                <div class="text-xs text-muted-foreground truncate">
+                <div class="text-xs text-muted-foreground font-mono truncate">
                   {{ project.path }}
                 </div>
               </div>
-              <label class="flex items-center gap-2 text-sm shrink-0">
-                HTTPS
-                <input
-                  type="checkbox"
-                  :checked="siteByProject[project.id]?.sslEnabled ?? false"
-                  @change="onToggleSsl(project.id, $event)"
+              <div class="flex items-center gap-2 text-sm shrink-0">
+                <label :for="`ssl-${project.id}`">HTTPS</label>
+                <Switch
+                  :id="`ssl-${project.id}`"
+                  :model-value="siteByProject[project.id]?.sslEnabled ?? false"
+                  :disabled="loading"
+                  @update:model-value="onToggleSsl(project.id, $event)"
                 />
-              </label>
+              </div>
             </div>
 
-            <div class="mt-2 flex items-center gap-2">
-              <input
-                :value="drafts[project.id] ?? ''"
-                @input="onDraft(project.id, $event)"
-                @keydown.enter="onApplyDomains(project.id)"
-                placeholder="myproject.test, api.myproject.test"
-                class="flex-1 rounded-md border border-border bg-background px-2 py-1 text-sm"
-              />
-              <Button
-                variant="outline"
-                size="sm"
+            <div class="mt-3">
+              <DomainEditor
+                :domains="siteByProject[project.id]?.domains ?? []"
                 :disabled="loading"
-                @click="onApplyDomains(project.id)"
-              >
-                Apply
-              </Button>
+                @commit="onCommitDomains(project.id, $event)"
+              />
             </div>
           </div>
         </CardContent>
@@ -179,12 +173,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive } from "vue";
+import { computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSiteStore } from "@/features/sites/stores/siteStore";
 import { useProjectStore } from "@/features/projects/stores/projectStore";
+import DomainEditor from "@/features/sites/components/DomainEditor.vue";
 import type { Site } from "@/shared/types/site";
 import { Button } from "@/shared/ui/button";
+import { Switch } from "@/shared/ui/switch";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { proxyState } from "@/shared/lib/serviceState";
 import PageContainer from "@/shared/ui/PageContainer.vue";
 import {
   Card,
@@ -201,11 +200,12 @@ const projectStore = useProjectStore();
 const { sites, status, loading, error, cliInstalled } = storeToRefs(siteStore);
 const { projects } = storeToRefs(projectStore);
 
-const drafts = reactive<Record<string, string>>({});
-
 const proxy = computed(() => status.value?.proxy ?? null);
 const proxyRunning = computed(() => proxy.value?.running ?? false);
 const caInstalled = computed(() => status.value?.https.caInstalled ?? false);
+const binaryInstalled = computed(
+  () => status.value?.https.binaryInstalled ?? false
+);
 
 const siteByProject = computed<Record<string, Site>>(() => {
   const map: Record<string, Site> = {};
@@ -215,28 +215,13 @@ const siteByProject = computed<Record<string, Site>>(() => {
 
 onMounted(async () => {
   await Promise.all([projectStore.fetchProjects(), siteStore.fetchAll()]);
-  for (const p of projects.value) {
-    if (!(p.id in drafts)) {
-      drafts[p.id] = siteByProject.value[p.id]?.domains.join(", ") ?? "";
-    }
-  }
 });
 
-function onDraft(projectId: string, event: Event) {
-  drafts[projectId] = (event.target as HTMLInputElement).value;
-}
-
-function onToggleSsl(projectId: string, event: Event) {
-  const enabled = (event.target as HTMLInputElement).checked;
+function onToggleSsl(projectId: string, enabled: boolean) {
   void siteStore.toggleSsl(projectId, enabled);
 }
 
-function onApplyDomains(projectId: string) {
-  const raw = drafts[projectId] ?? "";
-  const domains = raw
-    .split(",")
-    .map((d) => d.trim())
-    .filter(Boolean);
+function onCommitDomains(projectId: string, domains: string[]) {
   void siteStore.setDomains(projectId, domains);
 }
 </script>

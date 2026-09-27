@@ -6,8 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- shadcn-vue `switch` primitive, used for the per-project HTTPS toggle
+- `DomainEditor` component — domains render as removable mono chips and commit on Enter or blur instead of behind an explicit **Apply**, so a comma-separated run is a single `setDomains` and therefore a single hosts-file write
+
+### Fixed
+
+- Removing the last mapped domain no longer leaves a stale `# Horde managed` entry in the hosts file. `SiteManager.apply()` skipped `HostsFile.syncDomains()` whenever no domains remained, which is exactly the call that clears Horde's entries, while the Caddy route was still dropped — leaving a domain that resolved to `127.0.0.1` with no proxy behind it. `syncDomains([])` is now always called; it no-ops when there is nothing to clear
+
 ### Changed
 
+- Sites page: the Reverse Proxy card gains a lifecycle sigil and a `Risen`/`Dormant` badge with its ports in mono, and all three raw green/grey status dots are gone. The mkcert card reports `Root CA trusted` / `Root CA not trusted` in plain words with the binary state as a separate line, and carries no sigil — a trusted root CA is an installed artefact, not a running service, so the three-state vocabulary does not apply to it. The CLI card likewise stays sigil-free
+- Sites page: the per-project HTTPS checkbox becomes a plain shadcn switch with a real `<label for>`, and is treated as the config toggle it is — no sigil, no state badge
 - Database Manager: each instance row now carries a lifecycle sigil and a `Risen`/`Dormant` badge, with the port and version in mono and the `Port` label dropped. The section header gains a `N running / M stopped` tally counted over the unfiltered instance list, so the count always matches what is on screen
 - Database Manager: fixed the action hierarchy in the instance row. `Import` no longer renders identically to `Stop` — it drops to `ghost` so the terminating control is not visually equal to a benign one — and `Delete` becomes a titled icon button, matching the per-database rows below it. **Delete stays a direct control, not an overflow menu**, so the inline Yes/No confirm remains discoverable and no `dropdown-menu` primitive is introduced
 - Projects page: the project card now leads with a lifecycle sigil and a chip row (`PHP <version>` in mono, `Risen · :port` when serving, first mapped domain), renders the project path in mono, and reduces **Rescan** and **Open** to titled muted icon buttons. The hand-rolled green/green-dark localhost badge is gone, replaced by the theme-split ember token, so no surface carries a bespoke light/dark colour pair

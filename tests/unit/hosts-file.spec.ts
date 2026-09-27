@@ -84,6 +84,35 @@ describe("HostsFile", () => {
     expect(written).not.toContain("drop.test");
   });
 
+  // SiteManager.apply() used to skip syncDomains() when no domains remained,
+  // which is exactly the call that clears our entries -- so removing the last
+  // domain left a stale hosts entry pointing at a proxy route already dropped.
+  it("clears every managed entry when synced with an empty list", async () => {
+    const initial =
+      "127.0.0.1 a.test # Horde managed\n127.0.0.1 b.test # Horde managed\n127.0.0.1 user-kept.test\n";
+    const { adapter, fake } = createPlatform(initial);
+    const hosts = new HostsFile(adapter, "/backup");
+
+    const result = await hosts.syncDomains([]);
+
+    expect(result.changed).toBe(true);
+    const written = fake.write.mock.calls[0][0] as string;
+    expect(written).not.toContain("a.test");
+    expect(written).not.toContain("b.test");
+    // Untagged user entries are never ours to touch.
+    expect(written).toContain("127.0.0.1 user-kept.test");
+  });
+
+  it("no-ops on an empty sync when there is nothing managed to clear", async () => {
+    const { adapter, fake } = createPlatform("127.0.0.1 user.test\n");
+    const hosts = new HostsFile(adapter, "/backup");
+
+    const result = await hosts.syncDomains([]);
+
+    expect(result.changed).toBe(false);
+    expect(fake.write).not.toHaveBeenCalled();
+  });
+
   it("aborts when the hosts file changed externally during write", async () => {
     const { adapter, fake } = createPlatform("127.0.0.1 a.test\n");
     // Simulate an external change between the initial read and the write-time check.

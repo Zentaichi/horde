@@ -74,8 +74,8 @@
     "wait-on": "^9.0.10"
   },
   "dependencies": {
-    "@lucide/vue": "^1.24.0",
-    "@vueuse/core": "^14.3.0",
+    "@lucide/vue": "^1.48.0",
+    "@vueuse/core": "^14.4.0",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -84,7 +84,7 @@
     "fs-extra": "^11.3.6",
     "pinia": "^3.0.4",
     "reflect-metadata": "^0.2.2",
-    "reka-ui": "^2.10.1",
+    "reka-ui": "^2.10.5",
     "shadcn-vue": "^2.7.4",
     "tailwind-merge": "^3.6.0",
     "tsyringe": "^4.10.0",
