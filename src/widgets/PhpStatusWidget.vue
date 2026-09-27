@@ -11,9 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight, Circle, FileCode2, RefreshCw } from "@lucide/vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { phpState } from "@/shared/lib/serviceState";
+import { ArrowRight, RefreshCw } from "@lucide/vue";
 
 const store = usePhpStore();
 const { activeVersion, installedVersions, loading } = storeToRefs(store);
@@ -39,10 +41,14 @@ onUnmounted(() => {
 
 const installedCount = computed(() => installedVersions.value.length);
 
+const state = computed(() =>
+  phpState(activeVersion.value, installedCount.value)
+);
+
 const latestInstalled = computed(() => {
   if (installedVersions.value.length === 0) return null;
   return [...installedVersions.value].sort((a, b) =>
-    b.version.localeCompare(a.version, undefined, { numeric: true }),
+    b.version.localeCompare(a.version, undefined, { numeric: true })
   )[0];
 });
 </script>
@@ -52,10 +58,7 @@ const latestInstalled = computed(() => {
     <CardHeader class="pb-2">
       <div class="flex items-center justify-between">
         <CardTitle class="flex items-center gap-2 text-base">
-          <FileCode2
-            :class="activeVersion ? 'text-[#F97316]' : 'text-muted-foreground'"
-            class="size-4"
-          />
+          <ServiceSigil :risen="state === 'risen'" size="md" />
           PHP
         </CardTitle>
         <button
@@ -68,11 +71,12 @@ const latestInstalled = computed(() => {
         </button>
       </div>
       <CardDescription>
-        <template v-if="activeVersion">
-          Risen:
-          <span class="font-medium text-foreground">{{ activeVersion }}</span>
-        </template>
-        <template v-else> Dormant </template>
+        <ServiceStatus
+          :state="state"
+          :context="activeVersion ?? undefined"
+          size="sm"
+          :show-sigil="false"
+        />
       </CardDescription>
     </CardHeader>
 
@@ -84,7 +88,8 @@ const latestInstalled = computed(() => {
             {{ installedCount === 1 ? "version" : "versions" }} installed
           </p>
           <p v-if="latestInstalled" class="text-muted-foreground text-xs">
-            Latest: {{ latestInstalled.version }}
+            Latest:
+            <span class="font-mono">{{ latestInstalled.version }}</span>
           </p>
         </div>
         <p v-else class="text-muted-foreground">No versions installed yet.</p>

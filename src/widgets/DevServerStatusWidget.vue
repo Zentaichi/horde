@@ -9,7 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { Circle, Server } from "@lucide/vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { devServerState, type ServiceState } from "@/shared/lib/serviceState";
 
 const store = useDevServerStore();
 const { servers } = storeToRefs(store);
@@ -19,28 +21,25 @@ onMounted(async () => {
 });
 
 const runningCount = computed(
-  () => servers.value.filter((s) => s.running).length,
+  () => servers.value.filter((s) => s.running).length
 );
 
 const runningServers = computed(() => servers.value.filter((s) => s.running));
+
+const state = computed((): ServiceState =>
+  devServerState(servers.value.length > 0, runningCount.value > 0)
+);
 </script>
 
 <template>
   <Card class="h-full flex flex-col">
     <CardHeader class="pb-2">
       <CardTitle class="flex items-center gap-2 text-base">
-        <Server
-          :class="runningCount > 0 ? 'text-[#F97316]' : 'text-muted-foreground'"
-          class="size-4"
-        />
+        <ServiceSigil :risen="state === 'risen'" size="md" />
         Dev Servers
       </CardTitle>
       <CardDescription>
-        <template v-if="runningCount > 0">
-          Risen:
-          <span class="font-medium text-foreground">{{ runningCount }}</span>
-        </template>
-        <template v-else> Dormant </template>
+        <ServiceStatus :state="state" size="sm" :show-sigil="false" />
       </CardDescription>
     </CardHeader>
 
@@ -51,9 +50,9 @@ const runningServers = computed(() => servers.value.filter((s) => s.running));
           :key="s.projectId"
           class="flex items-center gap-1.5 text-sm"
         >
-          <Circle class="size-1.5 text-green-500 fill-green-500" />
+          <ServiceSigil :risen="true" size="sm" />
           <span class="font-medium truncate">{{ s.projectName }}</span>
-          <span class="text-muted-foreground">:{{ s.port }}</span>
+          <span class="text-muted-foreground font-mono">:{{ s.port }}</span>
         </div>
       </div>
       <p v-else class="text-sm text-muted-foreground">

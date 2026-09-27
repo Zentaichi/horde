@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
-import { useProjectStore } from '@/features/projects/stores/projectStore';
-import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
+import { onMounted, computed } from "vue";
+import { useProjectStore } from "@/features/projects/stores/projectStore";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 import {
   Card,
   CardContent,
@@ -10,10 +10,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/shared/ui/card';
-import { Button } from '@/shared/ui/button';
-import { Badge } from '@/shared/ui/badge';
-import { ArrowRight, Circle, FolderGit2 } from '@lucide/vue';
+} from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { ArrowRight, Circle, FolderGit2 } from "@lucide/vue";
 
 const store = useProjectStore();
 const { projects } = storeToRefs(store);
@@ -26,7 +26,7 @@ onMounted(async () => {
 const count = computed(() => projects.value.length);
 
 const phpVersionProjects = computed(() =>
-  projects.value.filter((p) => p.phpVersion),
+  projects.value.filter((p) => p.phpVersion)
 );
 </script>
 
@@ -40,11 +40,9 @@ const phpVersionProjects = computed(() =>
       <CardDescription>
         <template v-if="count > 0">
           <span class="font-medium text-foreground">{{ count }}</span>
-          {{ count === 1 ? 'project' : 'projects' }} tracked
+          {{ count === 1 ? "project" : "projects" }} tracked
         </template>
-        <template v-else>
-          No projects added
-        </template>
+        <template v-else> No projects added </template>
       </CardDescription>
     </CardHeader>
 
@@ -56,9 +54,9 @@ const phpVersionProjects = computed(() =>
           :key="p.id"
           class="flex items-center gap-1.5 text-sm"
         >
-          <Circle class="size-1.5 text-primary fill-primary" />
+          <Circle class="size-1.5 text-muted-foreground fill-current" />
           <span class="truncate">{{ p.name }}</span>
-          <Badge variant="secondary" class="text-xs ml-auto">
+          <Badge variant="secondary" class="text-xs ml-auto font-mono">
             {{ p.phpVersion }}
           </Badge>
         </div>
