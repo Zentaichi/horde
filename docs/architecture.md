@@ -18,7 +18,7 @@ Renderer (Vue 3)  <--IPC-->  Main Process (Node.js services)
 
 We chose **Feature Sliced Design** (FSD) because:
 
-1. **Isolation** — Every feature (PHP, MySQL) is a self-contained module with its own API layer, components, and composables. This prevents tight coupling and allows independent development/testing.
+1. **Isolation** — Every feature (PHP, MySQL) is a self-contained module with its own store, components, and types. Feature code reaches the main process only through the feature's Pinia store, which calls `window.electronAPI.*` directly; there is no per-feature API wrapper layer. This prevents tight coupling and allows independent development/testing.
 2. **Scalability** — Adding a new database engine or PHP tooling feature means following the same interface contracts in the engine-agnostic `database/` module; no existing code needs to change.
 3. **Shared layer** keeps UI consistency (shadcn-vue components) while avoiding duplication.
 
@@ -107,9 +107,12 @@ electron/               # Main process
 
 src/                    # Renderer process
   app/                  # Global setup, router, App shell
-    App.vue             # App shell with nav bar
+    App.vue             # App shell with nav bar + aggregate status sigil
     router.ts           # Route definitions
     main.ts             # App entry, Pinia setup
+    useTheme.ts         # Light/dark theme toggle
+    composables/        # App-scoped composables (may read feature stores)
+      useAggregateStatus.ts  # Header aggregate: DB ∪ dev servers ∪ proxy
   pages/
     DashboardPage.vue
     PhpManagerPage.vue
@@ -143,7 +146,11 @@ src/                    # Renderer process
     ProjectStatusWidget.vue
     DevServerStatusWidget.vue
   shared/               # Reusable UI kit, types, composables
-    ui/                 # shadcn-vue components
+    ui/                 # shadcn-vue components + Horde primitives
+      ServiceSigil.vue      # Lifecycle sigil (only component allowed to ember)
+      ServiceStatus.vue     # State badge (only component allowed to ember)
+      VersionCard.vue
+    lib/                # Pure helpers (cn, serviceState reducers)
     types/              # Shared type definitions
     composables/        # Shared composables
 ```
@@ -348,7 +355,7 @@ Key design decisions:
 
 ## Testing Strategy
 
-- **Unit tests**: Vitest for services, composables, and utilities. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces. Current coverage: SettingsStore, HostsFile, DatabaseRegistry, database store, CLI command layer.
+- **Unit tests**: Vitest for services, stores, and pure helpers, plus Vue component tests. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces. 14 spec files under `tests/unit/`: `SettingsStore`, `HostsFile`, `DatabaseRegistry`, the database store, the CLI command layer, the pure `serviceState` reducers, and component tests for the app header, dashboard widgets, PHP manager, project list, instance list, sites page, and domain editor. Component specs must opt into a DOM with a `// @vitest-environment happy-dom` docblock on line 1 — Vitest 4 removed `environmentMatchGlobs`, so filename patterns no longer select the environment.
 - **Integration tests**: Planned — test IPC handlers with a temporary SQLite database and a stubbed platform adapter (not yet present).
 - **E2E tests**: Playwright + Electron launch with mock main-process services (`HORDE_E2E_TEST=1`). **The suite is currently unstable (mock-wiring incomplete) and is not wired into CI** — treat it as a manual smoke check. Stabilization is tracked in the roadmap Phase 5.
 

@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Brand token layer — theme-split `--ember` (brand `#F97316` in dark, a darker same-hue ember in light, because brand ember on white is 2.80:1 and fails WCAG 1.4.11), `--ember-dim`, `--ember-glow`, and `--dormant` as an alias of `--muted-foreground` so there is no fourth grey. The dark ramp is retinted to warm graphite (hue 55, chroma 0.006) with lightness held constant
+- `ServiceSigil` and `ServiceStatus` primitives — a lifecycle sigil and a state badge, the only two components permitted to render ember. `--primary` and `--ring` stay deliberately neutral so ember remains a parallel signal axis rather than a re-skin
+- `success` theme token (theme-split, 5.19:1 light / 8.41:1 dark) for action-confirmation text, retiring the last raw `text-green-500` on a status surface
 - Aggregate service status in the app header — a 16px sigil beside the wordmark that reads dormant when nothing Horde manages is serving and risen when a database instance, dev server, or the reverse proxy is. Derived in the renderer from the Pinia stores, so no new IPC channel; the brand wordmark stays a static mark and is not itself the indicator
 - `ServiceSigil` gains an `animate` prop to suppress the 150ms transition, used by the header so a cold start cannot fake a state change
 - shadcn-vue `switch` primitive, used for the per-project HTTPS toggle
@@ -19,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- A three-state service vocabulary (`Absent` → "Not installed", `Dormant` → "Dormant", `Risen` → "Risen · _context_") now drives every service surface. It deliberately does not cover installed artefacts (the CLI shim, a trusted root CA), config toggles (site SSL, extension enablement, autostart), or verbs — those stay plain "Installed"/"Not installed", "Enabled"/"Disabled", and "Start"/"Stop". `docs/branding.md` records the rules and a four-point pre-ship consistency check
+- Dashboard and PHP surfaces are driven from the three-state vocabulary; the **Active** and **In Use** badges are retired. Extension toggles gained `aria-label` and `aria-pressed`, which they previously lacked entirely
 - The app header now fetches database instances, dev servers, and site status on mount to feed the aggregate sigil. This duplicates fetches the dashboard already performs; the alternative was a header that is only correct on one route
 - Sites page: the Reverse Proxy card gains a lifecycle sigil and a `Risen`/`Dormant` badge with its ports in mono, and all three raw green/grey status dots are gone. The mkcert card reports `Root CA trusted` / `Root CA not trusted` in plain words with the binary state as a separate line, and carries no sigil — a trusted root CA is an installed artefact, not a running service, so the three-state vocabulary does not apply to it. The CLI card likewise stays sigil-free
 - Sites page: the per-project HTTPS checkbox becomes a plain shadcn switch with a real `<label for>`, and is treated as the config toggle it is — no sigil, no state badge
@@ -27,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Projects page: the project card now leads with a lifecycle sigil and a chip row (`PHP <version>` in mono, `Risen · :port` when serving, first mapped domain), renders the project path in mono, and reduces **Rescan** and **Open** to titled muted icon buttons. The hand-rolled green/green-dark localhost badge is gone, replaced by the theme-split ember token, so no surface carries a bespoke light/dark colour pair
 - Dev servers have no dormant state: `devServerState` is now binary (risen while serving, absent otherwise) because `DevServerManager` deletes the entry on `stop()`, leaving the renderer nothing to report. Previously a stopped dev server was indistinguishable from one never started, and reporting otherwise would have meant the UI claiming state the main process had already discarded
 - Docs: reconcile documentation with shipped reality — restructured [docs/roadmap.md](docs/roadmap.md) (Phase 2.5 reordered chronologically, Phase 5 expanded into completeness/DX/community, E2E claims downgraded), refreshed the architecture IPC contract and directory trees, added missing FRs (multi-engine suite, import/export, uninstall, migrations), and fixed stale counts/claims across README, feature-parity, versioning, and the pre-release checklist
+- Docs: [docs/branding.md](docs/branding.md) corrected against the shipped app — the three-state table, the covers/does-not-cover split, the sigil lifecycle constraint and the aggregate header exception, a four-point pre-ship consistency check, the theme-split ember values with measured contrast, and a sanctioned 16px inline sigil tier. Fixed three claims that described behaviour the app does not have: the font is Geist (not Inter), the tray icon has never had a dormant/risen treatment, and three of the four tagline placements are unbuilt
 
 ## [0.6.0] - 2026-08-17
 

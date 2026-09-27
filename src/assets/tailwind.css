@@ -48,6 +48,7 @@
   --color-ember: var(--ember);
   --color-ember-dim: var(--ember-dim);
   --color-dormant: var(--dormant);
+  --color-success: var(--success);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -74,6 +75,10 @@
   --ember-dim: oklch(0.576 0.157 47.6 / 0.14);
   --ember-glow: 0 0 0 1px oklch(0.576 0.157 47.6 / 0.35);
   --dormant: var(--muted-foreground);
+  /* Confirmation of a completed action (a scan that found a version), not a
+     service state. Ember is reserved for risen, so success needs its own hue.
+     5.19:1 on white. */
+  --success: oklch(0.52 0.13 150);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -115,6 +120,8 @@
   --ember-dim: oklch(0.7049 0.1867 47.6 / 0.14);
   --ember-glow: 0 0 12px 1px oklch(0.7049 0.1867 47.6 / 0.35);
   --dormant: var(--muted-foreground);
+  /* 8.41:1 on --card. */
+  --success: oklch(0.75 0.15 150);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

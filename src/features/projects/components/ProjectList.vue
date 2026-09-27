@@ -69,7 +69,7 @@
             class="text-xs italic"
             :class="
               recentScanResult(project.id)?.version
-                ? 'text-green-500'
+                ? 'text-success'
                 : 'text-muted-foreground'
             "
           >
