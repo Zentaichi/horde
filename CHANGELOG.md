@@ -18,10 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- The database **instance list is now scoped to the selected engine**. `listInstances()` returns every engine's instances unfiltered, so choosing "PostgreSQL" displayed MySQL instances and contradicted the engine-scoped version list beside it. The `N running / M stopped` tally is per-engine to match, and the empty state names the engine
+- Invalid domains are now rejected when saved instead of being stored and silently dropped. `SiteManager.setDomains()` persists any string, passed it to Caddy as a route, and `HostsFile` then filtered it out of the hosts sync — so a domain could be shown as mapped while resolving to nothing. Hostname syntax now lives in one shared helper (`electron/utils/hostname.ts`) used by both, and a rejected save keeps what the user typed instead of clearing the field
+- The app can now exit under `HORDE_E2E_TEST`. Three tray-mode behaviours in `electron/main.ts` — a `preventDefault()`-ing close handler, a `window-all-closed` that declined to quit, and an unconditional tray — left the process un-quittable, so Playwright's `electronApp.close()` hung to the 60s test timeout on every spec
 - Removing the last mapped domain no longer leaves a stale `# Horde managed` entry in the hosts file. `SiteManager.apply()` skipped `HostsFile.syncDomains()` whenever no domains remained, which is exactly the call that clears Horde's entries, while the Caddy route was still dropped — leaving a domain that resolved to `127.0.0.1` with no proxy behind it. `syncDomains([])` is now always called; it no-ops when there is nothing to clear
 
 ### Changed
 
+- E2E specs use role- and slot-scoped locators instead of bare `text=`. The richer UI had turned `text=Projects` and `text=MySQL` into strict-mode violations matching four and five elements respectively. The suite is now 6/6 green in ~5s, from 6/6 failing; it is still not wired into CI
 - A three-state service vocabulary (`Absent` → "Not installed", `Dormant` → "Dormant", `Risen` → "Risen · _context_") now drives every service surface. It deliberately does not cover installed artefacts (the CLI shim, a trusted root CA), config toggles (site SSL, extension enablement, autostart), or verbs — those stay plain "Installed"/"Not installed", "Enabled"/"Disabled", and "Start"/"Stop". `docs/branding.md` records the rules and a four-point pre-ship consistency check
 - Dashboard and PHP surfaces are driven from the three-state vocabulary; the **Active** and **In Use** badges are retired. Extension toggles gained `aria-label` and `aria-pressed`, which they previously lacked entirely
 - The app header now fetches database instances, dev servers, and site status on mount to feed the aggregate sigil. This duplicates fetches the dashboard already performs; the alternative was a header that is only correct on one route

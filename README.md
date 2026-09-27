@@ -67,7 +67,7 @@
 
 ## Planned (Phase 5+)
 
-- Completeness gaps: settings page UI, auto-start configuration UI, `databases:restart` exposure, E2E stabilization + CI
+- Completeness gaps: settings page UI, auto-start configuration UI, `databases:restart` exposure, wiring E2E into CI
 - Full `php.ini` text editor, query log viewer, automatic binary cleanup, JSON settings export, failure notifications
 - Auto-updater, user-configurable binary mirrors, third-party plugin system, i18n, official website
 - **macOS & Linux support** (Phase 6 — architecture seeded in Phase 1)

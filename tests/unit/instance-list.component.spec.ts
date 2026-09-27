@@ -27,10 +27,10 @@ const STOPPED: DatabaseInstance = {
   running: false,
 };
 
-function mountList(instances: DatabaseInstance[]) {
+function mountList(instances: DatabaseInstance[], engine = "mysql") {
   const store = useDatabaseStore();
   store.instances = instances;
-  return mount(InstanceList, { props: { engine: "mysql" } });
+  return mount(InstanceList, { props: { engine } });
 }
 
 function buttonLabelled(w: ReturnType<typeof mountList>, label: string) {
@@ -56,22 +56,56 @@ beforeEach(() => {
   };
 });
 
+describe("InstanceList engine scoping", () => {
+  it("shows only instances belonging to the selected engine", () => {
+    // Regression: the list rendered every engine's instances unfiltered, so
+    // picking PostgreSQL still showed MySQL.
+    const w = mountList([RUNNING, STOPPED], "mysql");
+
+    expect(w.text()).toContain("MySQL");
+    expect(w.text()).not.toContain("Postgres");
+  });
+
+  it("swaps content when the engine changes", () => {
+    const w = mountList([RUNNING, STOPPED], "postgres");
+
+    expect(w.text()).toContain("Postgres");
+    expect(w.text()).not.toContain("MySQL");
+  });
+
+  it("shows the empty state when the engine has no instances", () => {
+    // Only a mysql instance exists, but postgres is selected.
+    const w = mountList([RUNNING], "postgres");
+
+    expect(w.find("[data-testid='instance-tally']").exists()).toBe(false);
+    // engineDisplayName resolves to "PostgreSQL" only once `engines` is
+    // populated; unstubbed it falls back to the raw key, so match either.
+    expect(w.text()).toMatch(/No postgres instances/i);
+  });
+});
+
 describe("InstanceList aggregate tally", () => {
-  it("counts the array it actually renders", () => {
+  it("counts the engine-scoped array it actually renders", () => {
     const w = mountList([RUNNING, STOPPED]);
+    // STOPPED is postgres, so the mysql-scoped tally sees only RUNNING.
     expect(w.get("[data-testid='instance-tally']").text()).toBe(
-      "1 running / 1 stopped"
+      "1 running / 0 stopped"
     );
   });
 
-  it("counts across engines, because the list is not filtered by the prop", () => {
-    const w = mountList([RUNNING, STOPPED]);
-    // Both a mysql and a postgres instance are on screen under engine="mysql".
-    expect(w.text()).toContain("MySQL");
-    expect(w.text()).toContain("Postgres");
-    expect(w.get("[data-testid='instance-tally']").text()).toContain(
-      "1 running / 1 stopped"
-    );
+  it("is per-engine, not global", () => {
+    // RUNNING is mysql and running; STOPPED is postgres and stopped. Neither
+    // engine has both, so each scoped tally must see exactly one instance.
+    expect(
+      mountList([RUNNING, STOPPED], "mysql")
+        .get("[data-testid='instance-tally']")
+        .text()
+    ).toBe("1 running / 0 stopped");
+    expect(
+      mountList([RUNNING, STOPPED], "postgres")
+        .get("[data-testid='instance-tally']")
+        .text()
+    ).toBe("0 running / 1 stopped");
   });
 
   it("shows no tally when there are no instances", () => {
@@ -88,26 +122,35 @@ describe("InstanceList aggregate tally", () => {
 });
 
 describe("InstanceList per-instance state", () => {
-  it("marks a running instance as risen and a stopped one as dormant", () => {
-    const w = mountList([RUNNING, STOPPED]);
-    const text = w.text();
-    expect(text).toContain("Risen");
-    expect(text).toContain("Dormant");
+  it("marks a running instance as risen", () => {
+    expect(mountList([RUNNING]).text()).toContain("Risen");
+  });
+
+  it("marks a stopped instance as dormant", () => {
+    expect(mountList([STOPPED], "postgres").text()).toContain("Dormant");
   });
 
   it("puts ember only on the running instance", () => {
-    const w = mountList([RUNNING, STOPPED]);
+    // Two mysql siblings so this compares against a stopped instance.
+    const stoppedSibling: DatabaseInstance = {
+      ...RUNNING,
+      instanceId: "i9",
+      version: "8.0.35",
+      port: 3308,
+      running: false,
+    };
+    const w = mountList([RUNNING, stoppedSibling]);
 
     const sigils = w.findAllComponents(ServiceSigil);
     const ember = sigils.filter((s) => s.classes().includes("text-ember"));
     const dormant = sigils.filter((s) => s.classes().includes("text-dormant"));
-    // One header sigil per instance, plus the badge sigil on the risen one.
+    // Per instance: one header sigil plus one badge sigil, on both states.
     expect(ember).toHaveLength(2);
     expect(dormant).toHaveLength(2);
   });
 
   it("keeps ember off the card when nothing is running", () => {
-    const w = mountList([STOPPED]);
+    const w = mountList([STOPPED], "postgres");
     expect(w.find(".text-ember").exists()).toBe(false);
   });
 });
@@ -130,7 +173,7 @@ describe("InstanceList machine data", () => {
 
 describe("InstanceList action hierarchy", () => {
   it("keeps Delete as a titled icon button rather than an overflow menu", () => {
-    const w = mountList([STOPPED]);
+    const w = mountList([STOPPED], "postgres");
 
     const titles = w.findAll("button").map((b) => b.attributes("title"));
     expect(titles).toContain("Delete instance");
@@ -141,7 +184,7 @@ describe("InstanceList action hierarchy", () => {
   });
 
   it("still confirms inline before deleting", async () => {
-    const w = mountList([STOPPED]);
+    const w = mountList([STOPPED], "postgres");
 
     const del = w
       .findAll("button")
@@ -164,7 +207,7 @@ describe("InstanceList action hierarchy", () => {
   });
 
   it("promotes Start as the primary action when the instance is stopped", () => {
-    const w = mountList([STOPPED]);
+    const w = mountList([STOPPED], "postgres");
     const start = buttonLabelled(w, "Start");
     expect(start.classes()).toContain("bg-primary");
     expect(w.text()).not.toContain("Import");

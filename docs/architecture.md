@@ -104,6 +104,7 @@ electron/               # Main process
   utils/
     download.ts         # Shared download utility (single source)
     ports.ts            # Port probing / free-port scan
+    hostname.ts         # Shared hostname validation (hosts sync + site manager)
 
 src/                    # Renderer process
   app/                  # Global setup, router, App shell
@@ -154,6 +155,15 @@ src/                    # Renderer process
     types/              # Shared type definitions
     composables/        # Shared composables
 ```
+
+E2E (`tests/e2e/`, Playwright) is **green** (6/6, ~5s) but is not wired into CI. Two
+traps cost most of that. First, the app must actually be allowed to exit, or
+`electronApp.close()` hangs to the 60s test timeout — under `HORDE_E2E_TEST` the tray,
+the `preventDefault()` close handler, and the `window-all-closed` no-quit are all skipped
+for exactly this reason. Second, bare `text=` locators become strict-mode violations as
+soon as nav links, card titles, and body copy overlap; prefer `getByRole`, and note that
+card titles render with surrounding whitespace while an `<option>` is never _visible_
+while its `<select>` is closed.
 
 ## Backend: Service Layer with Dependency Injection
 
@@ -355,7 +365,7 @@ Key design decisions:
 
 ## Testing Strategy
 
-- **Unit tests**: Vitest for services, stores, and pure helpers, plus Vue component tests. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces. 14 spec files under `tests/unit/`: `SettingsStore`, `HostsFile`, `DatabaseRegistry`, the database store, the CLI command layer, the pure `serviceState` reducers, and component tests for the app header, dashboard widgets, PHP manager, project list, instance list, sites page, and domain editor. Component specs must opt into a DOM with a `// @vitest-environment happy-dom` docblock on line 1 — Vitest 4 removed `environmentMatchGlobs`, so filename patterns no longer select the environment.
+- **Unit tests**: Vitest for services, stores, and pure helpers, plus Vue component tests. Mock `IPlatformAdapter` and `IDatabaseEngine` interfaces. 15 spec files under `tests/unit/`: `SettingsStore`, `HostsFile`, the hostname validator, `DatabaseRegistry`, the database store, the CLI command layer, the pure `serviceState` reducers, and component tests for the app header, dashboard widgets, PHP manager, project list, instance list, sites page, and domain editor. Component specs must opt into a DOM with a `// @vitest-environment happy-dom` docblock on line 1 — Vitest 4 removed `environmentMatchGlobs`, so filename patterns no longer select the environment.
 - **Integration tests**: Planned — test IPC handlers with a temporary SQLite database and a stubbed platform adapter (not yet present).
 - **E2E tests**: Playwright + Electron launch with mock main-process services (`HORDE_E2E_TEST=1`). **The suite is currently unstable (mock-wiring incomplete) and is not wired into CI** — treat it as a manual smoke check. Stabilization is tracked in the roadmap Phase 5.
 

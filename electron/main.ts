@@ -249,16 +249,22 @@ app.whenReady().then(async () => {
   registerDevServerHandlers();
 
   createWindow();
-  createTray(mainWindow!);
+  // A tray keeps the process alive on Windows, which would stop Playwright's
+  // electronApp.close() from ever completing.
+  if (!isE2E) createTray(mainWindow!);
 
   await startAutoServices();
 
-  mainWindow!.on("close", (e) => {
-    if (!mainWindow?.isDestroyed()) {
-      e.preventDefault();
-      mainWindow?.hide();
-    }
-  });
+  // In tray mode closing the window only hides it. In E2E it has to actually
+  // close, or the test harness hangs until its timeout.
+  if (!isE2E) {
+    mainWindow!.on("close", (e) => {
+      if (!mainWindow?.isDestroyed()) {
+        e.preventDefault();
+        mainWindow?.hide();
+      }
+    });
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -267,5 +273,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  // Don't quit — app lives in tray
+  // Don't quit — app lives in tray. E2E is the exception, since nothing is
+  // holding a tray and the harness is waiting on a clean exit.
+  if (isE2E) app.quit();
 });

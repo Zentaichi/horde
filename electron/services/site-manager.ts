@@ -12,6 +12,7 @@ import type { ProxyRoute } from "../types/proxy";
 import type { Project } from "../types/project";
 import { SettingsStore } from "./settings-store";
 import { HostsFile } from "./hosts-file";
+import { invalidHostnames } from "../utils/hostname";
 
 @injectable()
 @singleton()
@@ -39,7 +40,20 @@ export class SiteManager implements ISiteManager {
 
   async setDomains(projectId: string, domains: string[]): Promise<void> {
     const project = this.findProject(projectId);
-    project.domains = this.normalizeDomains(domains);
+    const normalized = this.normalizeDomains(domains);
+
+    // Reject rather than silently drop. Previously an invalid entry was stored,
+    // passed to Caddy as a route, and then filtered out of the hosts sync --
+    // so the domain resolved to nothing while the UI showed it as mapped.
+    const invalid = invalidHostnames(normalized);
+    if (invalid.length > 0) {
+      throw new Error(
+        `Not a valid domain: ${invalid.join(", ")}. ` +
+          `Use a hostname like "myapp.test" -- no scheme, port, or path.`
+      );
+    }
+
+    project.domains = normalized;
     this.settings.saveProject(project);
     await this.apply();
   }
