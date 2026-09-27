@@ -4,7 +4,7 @@
       <div class="flex items-baseline gap-2">
         <h2 class="text-xl font-semibold">Instances</h2>
         <span
-          v-if="instances.length > 0"
+          v-if="scopedInstances.length > 0"
           class="text-xs text-muted-foreground"
           data-testid="instance-tally"
         >
@@ -64,8 +64,8 @@
       </CardContent>
     </Card>
 
-    <div v-if="instances.length > 0" class="space-y-3">
-      <Card v-for="instance in instances" :key="instance.instanceId">
+    <div v-if="scopedInstances.length > 0" class="space-y-3">
+      <Card v-for="instance in scopedInstances" :key="instance.instanceId">
         <CardContent class="p-4">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
@@ -252,7 +252,8 @@
     </div>
 
     <p v-else-if="!showCreateForm" class="text-sm text-muted-foreground">
-      No instances. Download a database version and create your first instance.
+      No {{ store.engineDisplayName(engine) }} instances. Download a version and
+      create your first instance.
     </p>
   </div>
 </template>
@@ -288,17 +289,29 @@ const creatingDb = ref<string | null>(null);
 const droppingDb = ref<string | null>(null);
 
 /**
- * The tally is global, not per-engine, because this list renders the store's
- * unfiltered `instances` array -- which is what `listInstances()` returns. The
- * engine prop only scopes the create form, not the list. Counting the array we
- * actually render is the honest option; filtering it would be a behaviour
- * change, not a restyle.
+ * Instances for the engine this list is scoped to.
+ *
+ * `listInstances()` returns every engine's instances unfiltered, so without
+ * this the list showed MySQL instances while the engine selector read
+ * "PostgreSQL" -- and the left-hand version list, which *is* engine-scoped,
+ * disagreed with the instance list beside it.
+ */
+const scopedInstances = computed(() =>
+  instances.value.filter((i) => i.engine === props.engine)
+);
+
+/**
+ * The tally is per-engine, matching the list directly above it. It was global
+ * before, which was only truthful while the list itself was unfiltered.
+ *
+ * `nextPort` below deliberately still reads the full array: ports collide
+ * system-wide, not per engine.
  */
 const runningCount = computed(
-  () => instances.value.filter((i) => i.running).length
+  () => scopedInstances.value.filter((i) => i.running).length
 );
 const stoppedCount = computed(
-  () => instances.value.length - runningCount.value
+  () => scopedInstances.value.length - runningCount.value
 );
 
 async function loadDatabases(instanceId: string) {
