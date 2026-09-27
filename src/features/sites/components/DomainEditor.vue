@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { Badge } from "@/shared/ui/badge";
 import { X } from "@lucide/vue";
 
@@ -16,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const draft = ref("");
+const pending = ref<string[] | null>(null);
 
 /**
  * Mirrors `SiteManager.normalizeDomains` (trim, lowercase, dedupe) so the
@@ -52,6 +53,11 @@ function commit(next: string[]) {
 /**
  * A comma-separated run is one commit, so "a.test, b.test" + Enter costs a
  * single elevation rather than one per domain.
+ *
+ * The draft is not cleared here. It is held in `pending` and only dropped once
+ * the parent re-renders with the domains actually present, because a rejected
+ * commit (an invalid hostname, or a hosts write that failed) must not silently
+ * discard what the user typed.
  */
 function addFromDraft() {
   const additions = draft.value
@@ -59,13 +65,27 @@ function addFromDraft() {
     .map((d) => d.trim())
     .filter(Boolean);
   if (additions.length === 0) return;
-  draft.value = "";
-  commit([...props.domains, ...additions]);
+  const normalized = normalize(additions);
+  if (isSameSet(props.domains, [...props.domains, ...normalized])) return;
+  pending.value = normalized;
+  commit([...props.domains, ...normalized]);
 }
 
 function onRemove(domain: string) {
+  pending.value = null;
   commit(props.domains.filter((d) => d !== domain));
 }
+
+// Clear the held draft only once the commit has actually landed.
+watch(
+  () => props.domains,
+  (next) => {
+    if (pending.value && pending.value.every((d) => next.includes(d))) {
+      draft.value = "";
+      pending.value = null;
+    }
+  }
+);
 </script>
 
 <template>

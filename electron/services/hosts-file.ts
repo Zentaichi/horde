@@ -1,6 +1,7 @@
 import { join } from "path";
 import { writeFile } from "fs-extra";
 import type { IPlatformAdapter } from "../platform/IPlatformAdapter";
+import { isValidHostname } from "../utils/hostname";
 
 export const HORDE_TAG = "Horde managed";
 
@@ -32,7 +33,7 @@ export class HostsFile {
     const wanted = new Set(
       domains
         .map((d) => d.toLowerCase().trim())
-        .filter((d) => this.isValidHostname(d))
+        .filter((d) => isValidHostname(d))
     );
 
     const kept: string[] = [];
@@ -117,13 +118,6 @@ export class HostsFile {
       const escaped = escapeRegExp(d.toLowerCase().trim());
       return new RegExp(`\\b${escaped}\\b`).test(content.toLowerCase());
     });
-  }
-
-  private isValidHostname(domain: string): boolean {
-    if (!domain || domain.length > 253) return false;
-    return /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i.test(
-      domain
-    );
   }
 
   private async writeWithBackup(next: string, original: string): Promise<void> {
