@@ -28,12 +28,19 @@ export function instanceState(running: boolean): ServiceState {
   return running ? "risen" : "dormant";
 }
 
-export function devServerState(
-  present: boolean,
-  running: boolean
-): ServiceState {
-  if (running) return "risen";
-  return present ? "dormant" : "absent";
+/**
+ * Dev servers have no "dormant" state, unlike most other services.
+ *
+ * `DevServerManager` tracks servers in an in-memory map and `stop()` deletes
+ * the entry outright, so a stopped dev server is indistinguishable from one
+ * that never started -- there is nothing left to report. Reporting "dormant"
+ * would mean the renderer had to remember an entry the main process has
+ * already forgotten, and the next `fetchAll()` would silently drop it.
+ *
+ * The honest mapping is therefore binary: running, or not present.
+ */
+export function devServerState(running: boolean): ServiceState {
+  return running ? "risen" : "absent";
 }
 
 export function proxyState(running: boolean): ServiceState {

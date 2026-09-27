@@ -27,7 +27,7 @@ const runningCount = computed(
 const runningServers = computed(() => servers.value.filter((s) => s.running));
 
 const state = computed((): ServiceState =>
-  devServerState(servers.value.length > 0, runningCount.value > 0)
+  devServerState(runningCount.value > 0)
 );
 </script>
 

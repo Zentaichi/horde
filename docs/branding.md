@@ -57,7 +57,7 @@ Beyond the tagline, the motif shows up in how services describe their own state.
 | **Dormant** | "No active version", "Dormant" | Muted/gray sigil, neutral text          |
 | **Risen**   | "Risen: PHP 8.4.23"            | Ember-accent sigil, accent-colored text |
 
-This applies to PHP versions, database instances, and dev servers — anywhere a service has a real on/off lifecycle. Do **not** extend the vocabulary to buttons or actions (no "Summon PHP", no "Banish instance") — the audience is professional developers, and verb-level cosplay undercuts the tool's credibility. Nouns and status words carry the theme; verbs stay plain ("Start", "Stop", "Manage").
+This applies to PHP versions and database instances — anywhere a service has a real on/off lifecycle. Dev servers are the deliberate exception: `DevServerManager` tracks them in an in-memory map and `stop()` deletes the entry, so a stopped dev server leaves nothing behind to distinguish it from one that never started. They read as risen or absent, and the UI must not synthesise a dormant tier the main process cannot back. Do **not** extend the vocabulary to buttons or actions (no "Summon PHP", no "Banish instance") — the audience is professional developers, and verb-level cosplay undercuts the tool's credibility. Nouns and status words carry the theme; verbs stay plain ("Start", "Stop", "Manage").
 
 ## Colour Palette
 

@@ -12,16 +12,23 @@
       :key="project.id"
       class="border border-border rounded-lg p-4 space-y-2"
     >
-      <div class="flex items-start justify-between">
-        <div>
-          <h3 class="font-medium text-sm">{{ project.name }}</h3>
-          <p class="text-xs text-muted-foreground truncate max-w-md">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <ServiceSigil
+              :risen="isServed(project.id)"
+              size="sm"
+              class="shrink-0"
+            />
+            <h3 class="font-medium text-sm truncate">{{ project.name }}</h3>
+          </div>
+          <p class="text-xs text-muted-foreground font-mono truncate max-w-md">
             {{ project.path }}
           </p>
         </div>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1.5 shrink-0">
           <Badge v-if="project.phpVersion" variant="secondary" class="text-xs">
-            PHP {{ project.phpVersion }}
+            PHP <span class="font-mono">{{ project.phpVersion }}</span>
           </Badge>
           <Badge
             v-if="project.phpVersion && project.isPhpVersionInstalled === false"
@@ -30,13 +37,18 @@
           >
             Not installed
           </Badge>
+          <ServiceStatus
+            v-if="isServed(project.id)"
+            state="risen"
+            size="sm"
+            :context="`:${serverMap[project.id]}`"
+          />
           <Badge
-            v-if="serverMap[project.id] !== undefined"
+            v-if="firstDomain(project)"
             variant="outline"
-            class="text-xs text-green-600 dark:text-green-400 border-green-500/30"
+            class="text-xs font-mono"
           >
-            <Circle class="size-1.5 fill-current inline-block mr-1" />
-            localhost:{{ serverMap[project.id] }}
+            {{ firstDomain(project) }}
           </Badge>
         </div>
       </div>
@@ -44,12 +56,13 @@
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1">
           <Button
-            variant="outline"
-            size="xs"
+            variant="ghost"
+            size="icon-xs"
+            class="text-muted-foreground"
+            title="Rescan for .php-version"
             @click="$emit('scan', project.id)"
           >
-            <RefreshCw class="size-3 mr-1" />
-            Rescan
+            <RefreshCw class="size-3.5" />
           </Button>
           <span
             v-if="recentScanResult(project.id)"
@@ -68,12 +81,13 @@
           </span>
         </div>
         <Button
-          variant="outline"
-          size="xs"
+          variant="ghost"
+          size="icon-xs"
+          class="text-muted-foreground"
+          title="Open project folder"
           @click="$emit('openDir', project.id)"
         >
-          <FolderOpen class="size-3 mr-1" />
-          Open
+          <FolderOpen class="size-3.5" />
         </Button>
         <DevServerPanel :project-id="project.id" />
         <div class="flex-1" />
@@ -96,10 +110,12 @@ import type { Project } from "@/shared/types/project";
 import { useProjectStore } from "@/features/projects/stores/projectStore";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { RefreshCw, FolderOpen, Trash2, Circle } from "@lucide/vue";
+import ServiceSigil from "@/shared/ui/ServiceSigil.vue";
+import ServiceStatus from "@/shared/ui/ServiceStatus.vue";
+import { RefreshCw, FolderOpen, Trash2 } from "@lucide/vue";
 import DevServerPanel from "@/features/devserver/components/DevServerPanel.vue";
 
-defineProps<{
+const props = defineProps<{
   projects: Project[];
   serverMap: Record<string, number>;
 }>();
@@ -111,6 +127,19 @@ defineEmits<{
 }>();
 
 const store = useProjectStore();
+
+/**
+ * A dev server is either serving or absent -- `DevServerManager` deletes the
+ * entry on stop, so `serverMap` carrying a port is exactly the risen condition.
+ * See `devServerState` for why there is no dormant tier here.
+ */
+function isServed(projectId: string) {
+  return props.serverMap[projectId] !== undefined;
+}
+
+function firstDomain(project: Project) {
+  return project.domains?.[0];
+}
 
 function recentScanResult(projectId: string) {
   const result = store.getScanResult(projectId);

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Projects page: the project card now leads with a lifecycle sigil and a chip row (`PHP <version>` in mono, `Risen · :port` when serving, first mapped domain), renders the project path in mono, and reduces **Rescan** and **Open** to titled muted icon buttons. The hand-rolled green/green-dark localhost badge is gone, replaced by the theme-split ember token, so no surface carries a bespoke light/dark colour pair
+- Dev servers have no dormant state: `devServerState` is now binary (risen while serving, absent otherwise) because `DevServerManager` deletes the entry on `stop()`, leaving the renderer nothing to report. Previously a stopped dev server was indistinguishable from one never started, and reporting otherwise would have meant the UI claiming state the main process had already discarded
 - Docs: reconcile documentation with shipped reality — restructured [docs/roadmap.md](docs/roadmap.md) (Phase 2.5 reordered chronologically, Phase 5 expanded into completeness/DX/community, E2E claims downgraded), refreshed the architecture IPC contract and directory trees, added missing FRs (multi-engine suite, import/export, uninstall, migrations), and fixed stale counts/claims across README, feature-parity, versioning, and the pre-release checklist
 
 ## [0.6.0] - 2026-08-17

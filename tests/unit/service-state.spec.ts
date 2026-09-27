@@ -82,10 +82,9 @@ describe("instanceState", () => {
 });
 
 describe("devServerState", () => {
-  it("distinguishes all three states", () => {
-    expect(devServerState(true, true)).toBe("risen");
-    expect(devServerState(true, false)).toBe("dormant");
-    expect(devServerState(false, false)).toBe("absent");
+  it("is risen while serving and absent otherwise, with no dormant tier", () => {
+    expect(devServerState(true)).toBe("risen");
+    expect(devServerState(false)).toBe("absent");
   });
 });
 
